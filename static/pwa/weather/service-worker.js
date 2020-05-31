@@ -16,22 +16,22 @@ var dataCacheName = 'weatherData-v1';
 var cacheName = 'weatherPWA-final-1';
 var filesToCache = [
   '/',
-  '/index.html',
-  '/scripts/app.js',
-  '/styles/inline.css',
-  '/images/clear.png',
-  '/images/cloudy-scattered-showers.png',
-  '/images/cloudy.png',
-  '/images/fog.png',
-  '/images/ic_add_white_24px.svg',
-  '/images/ic_refresh_white_24px.svg',
-  '/images/partly-cloudy.png',
-  '/images/rain.png',
-  '/images/scattered-showers.png',
-  '/images/sleet.png',
-  '/images/snow.png',
-  '/images/thunderstorm.png',
-  '/images/wind.png'
+  '/static/pwa/weather/index.html',
+  '/static/pwa/weather/scripts/app.js',
+  '/static/pwa/weather/styles/inline.css',
+  '/static/pwa/weather/images/clear.png',
+  '/static/pwa/weather/images/cloudy-scattered-showers.png',
+  '/static/pwa/weather/images/cloudy.png',
+  '/static/pwa/weather/images/fog.png',
+  '/static/pwa/weather/images/ic_add_white_24px.svg',
+  '/static/pwa/weather/images/ic_refresh_white_24px.svg',
+  '/static/pwa/weather/images/partly-cloudy.png',
+  '/static/pwa/weather/images/rain.png',
+  '/static/pwa/weather/images/scattered-showers.png',
+  '/static/pwa/weather/images/sleet.png',
+  '/static/pwa/weather/images/snow.png',
+  '/static/pwa/weather/images/thunderstorm.png',
+  '/static/pwa/weather/images/wind.png'
 ];
 
 self.addEventListener('install', function(e) {

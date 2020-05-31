@@ -90,13 +90,17 @@ if (annyang) {
 	alertify.set({
 		delay: 600000
 	});
-	alertify.error("Welcome to ULAPPH Cloud Desktop! <a href='https://github.com/edwindvinas/ULAPPH-Cloud-Desktop' target='welcome'>Click here</a> for more info or just say info!");
-	alertify.error("Testing hello world... <a href='#' onClick=\"helloWorld();return false;\">Click to test</a>");
-	alertify.error("Share your camera? <a href='#' onClick=\"openCameraS();return false;\">Small Camera</a> | <a href='#' onClick=\"openCameraB();return false;\">Big Camera</a>");
-	alertify.success("OPEN SHORTCUTS: <a href='#' onClick=\"loadShortcuts();return false;\">Open Shortcuts</a>");
-	alertify.log("I'm an AI chatbot! Say hello or good morning or good afternoon or good evening to start the conversation. Have a nice day ahead!");
+	alertify.success("Welcome to Ulapph! For best experience, please use Chrome. <a href='https://github.com/edwindvinas/ULAPPH-Cloud-Desktop' target='welcome'>More info...</a>");
+	alertify.success("To enable voice recognition,  <a href='#' onClick=\"helloWorld();return false;\">click here</a> to test.");
+	alertify.success("To share your camera, please select: <a href='#' onClick=\"openCameraS();return false;\">Small Camera</a> | <a href='#' onClick=\"openCameraB();return false;\">Big Camera</a>");
+	alertify.success("To open predefined shortcuts: <a href='#' onClick=\"loadShortcuts();return false;\">Open Shortcuts</a>");
+	//alertify.log("I'm an AI chatbot! Say hello or good morning or good afternoon or good evening to start the conversation. Have a nice day ahead!");
+	alertify.success("To install required Chrome extensions: <a href='#' onClick=\"showExtensions();return false;\">list extensions</a>.");
+	//
 	//
 	var isMobile = document.getElementById("isMobile").value;
+	//force flag
+	isMobile = "true";
 	if (isMobile == "false") {
 		openWindow('https://www.google.com','Search Google');
 		openWindow('https://www.bing.com','Search Bing');
@@ -112,14 +116,13 @@ if (annyang) {
 		var thisLink = "https://www.youtube.com/embed/" + thisItem + "?rel=0&rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&autoplay=0";
 		openWindow(thisLink, "Youtube");
 		//
+		alertify.error("To close Ulapph windows: <a href='#' onClick=\"clearWindows();return false;\">Close Windows</a>");
+		//
+		//
 		//uwmArrWin();
 		//
 		winOnOff();
 	}
-	alertify.error("INSTALLERS: <a href='#' onClick=\"showExtensions();return false;\">Install Chrome Extensions</a>");
-	//
-	alertify.error("CLOSE WINDOWS: <a href='#' onClick=\"clearWindows();return false;\">Close Default Windows</a>");
-	//
 	alertify.set({
 		delay: 1000
 	});
@@ -385,13 +388,11 @@ function newsLiveStream() {
 	var thisLink = "https://www.youtube.com/embed/" + YID_SkyNews + "?rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&autoplay=0"
 	openWindow(thisLink, "Livestream");	
 
-	var YID_ABSCBN = "4s7nCRoAVo4";
-	thisLink = "https://www.youtube.com/embed/" + YID_ABSCBN + "?rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&autoplay=0"
-	openWindow(thisLink, "Livestream");		
+	thisLink = "https://www.youtube.com/results?search_query=livestream+news+dzmm+teleradyo";
+	openWindow(thisLink, "Livestream DZMM");	
 
-	var YID_CNA = "U_XsRZXL2Ic";
-	thisLink = "https://www.youtube.com/embed/" + YID_CNA + "?rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&autoplay=0"
-	openWindow(thisLink, "Livestream");	
+	thisLink = "https://www.youtube.com/results?search_query=livestream+news+asia";
+	openWindow(thisLink, "Livestream ASIA");	
 
 	thisLink = "https://www.worldometers.info/coronavirus/";
 	openWindow(thisLink, "Livestream");	

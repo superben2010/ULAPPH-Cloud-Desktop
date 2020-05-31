@@ -8,14 +8,23 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- pwa manifest -->
-    <link rel="manifest" href="/pwa/news/manifest.json?v=1">
+    <link rel="manifest" href="/static/pwa/news/manifest.json?v=1">
 
 	<!-- stylesheets are conveniently separated into components -->
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/setup.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/says.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/reply.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/typing.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/input.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/setup.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/says.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/reply.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/typing.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/input.css">
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-87908378-2"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-87908378-2');
+	</script>
 	<style>
 	body {
 		background: #dcdde0;
@@ -55,7 +64,7 @@
 <div id="chat"></div>
 
 <!-- import the JavaScript file -->
-<script src="/lib/js/chat-bubble/Bubbles.js"></script>
+<script src="/static/lib/js/chat-bubble/Bubbles.js"></script>
 <script>
 var urlParams;
 var match,
@@ -181,7 +190,7 @@ var botUrl = window.location.href;
 var convo = {
   ice: {
     says: ["Hi, I'm ULAPPH news Bot!", 
-    		"<a href=\"" + botUrl + "\" title=\"Click to restart ULAPPH bot!\"><img src=\"/pwa/news/news.gif\" width=\"100%\" height=\"100%\"></a>", 
+    		"<a href=\"" + botUrl + "\" title=\"Click to restart ULAPPH bot!\"><img src=\"/static/pwa/news/news.gif\" width=\"100%\" height=\"100%\"></a>", 
     		"Type any text or click button below."
     	],
 	  reply: [
@@ -240,7 +249,7 @@ var convo = {
 }
 
 funcnews = function () {
-    location.href = "/pwa/news/monitor.html";
+    location.href = "/static/pwa/news/monitor.html";
     return;
 }
 
@@ -582,5 +591,5 @@ setTimeout(function() {funcnews()}, 300000)
 chatWindow.talk(convo)
 </script>
 <!--pwa service worker registration-->
-<script src="/pwa/news/main.js"></script>
+<script src="/static/pwa/news/main.js"></script>
 </body>

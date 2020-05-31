@@ -8,6 +8,9 @@ localStorage[root+"newsapiurl"] = url;
 var UID = document.getElementById("aUser").value;
 //enable news based on settings
 var newsEn = document.getElementById("newsEn").value;
+alertify.set({
+	delay: 600000
+});
 if (newsEn == "true") {
 	localStorage[root+"news"] = "on";
 	alertify.error("News is turned on. To turn off, say STOP NEWS or <a href='#' onClick=\"newsStream();return false;\">click to stop news</a>.");
@@ -15,6 +18,9 @@ if (newsEn == "true") {
 	localStorage[root+"news"] = "off";
 	alertify.error("News is turned off. To turn on, say START NEWS or <a href='#' onClick=\"newsStream();return false;\">click to start news</a>.");
 }
+alertify.set({
+	delay: 1000
+});
 //show news after 10s
 var newsShow = document.getElementById("newss").value;
 var newsFetch = document.getElementById("newsf").value;

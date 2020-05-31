@@ -22,17 +22,26 @@
   <link rel="canonical" href="https://weather-pwa-sample.firebaseapp.com/final/">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weather PWA</title>
-  <link rel="stylesheet" type="text/css" href="/pwa/weather/styles/inline.css">
+  <link rel="stylesheet" type="text/css" href="/static/pwa/weather/styles/inline.css">
 
   <!-- TODO add manifest here -->
-  <link rel="manifest" href="/pwa/weather/manifest.json">
+  <link rel="manifest" href="/static/pwa/weather/manifest.json">
   <!-- Add to home screen for Safari on iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Weather PWA">
-  <link rel="apple-touch-icon" href="/pwa/weather/images/icons/icon-152x152.png">
-  <meta name="msapplication-TileImage" content="/pwa/weather/images/icons/icon-144x144.png">
+  <link rel="apple-touch-icon" href="/static/pwa/weather/images/icons/icon-152x152.png">
+  <meta name="msapplication-TileImage" content="/static/pwa/weather/images/icons/icon-144x144.png">
   <meta name="msapplication-TileColor" content="#2F3BA2">
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-87908378-2"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-87908378-2');
+	</script>
 </head>
 <body>
 
@@ -176,7 +185,7 @@
   </div>
 
   <!-- Uncomment the line below when ready to test with fake data -->
-  <script src="/pwa/weather/scripts/app.js" async></script>
+  <script src="/static/pwa/weather/scripts/app.js" async></script>
 
 </body>
 </html>

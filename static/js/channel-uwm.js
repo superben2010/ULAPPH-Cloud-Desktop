@@ -1672,3 +1672,25 @@ function consoleLogger(msg) {
 	}
 	console.log(msg);
 }
+//resize handler
+window.addEventListener("resize", resizeFunc);
+
+function resizeFunc() {
+    if (localStorage[root+'isScreenSmall-force'] == 'Y') {
+	return;
+    }
+    var txt = "";
+    txt += "<p>innerWidth: " + window.innerWidth + "</p>";
+    txt += "<p>innerHeight: " + window.innerHeight + "</p>"; 
+    txt += "<p>outerWidth: " + window.outerWidth + "</p>";
+    txt += "<p>outerHeight: " + window.outerHeight + "</p>";
+	var screenSize = window.innerWidth;
+
+	if (window.innerHeight <= 600 || window.innerWidth <= 500) {
+		//window is so small, we cant open widgets in uwm
+		localStorage[root+'isScreenSmall'] = 'Y';
+	} else {
+		localStorage[root+'isScreenSmall'] = 'N';
+	}
+	alertifyThis(txt);
+}

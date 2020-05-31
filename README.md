@@ -1,24 +1,21 @@
-ULAPPH Cloud Desktop is a simple, free and open-source webtop or web-based desktop which can be installed in your local laptop, cloud server, docker container, Kubernetes, serverless like Cloud Run or even Android via Termux!
+![ULAPPH  Desktop](https://lh3.googleusercontent.com/9MJwQayXpOjndit2GKb-yEx9JIid0LNw0XhJFPzDEFrXIiHwiuvg4JFHBvQHQP7Md1oiLXwW6PPCQhg9MVmAoqD4LTCL1A=s1000)
+
+ULAPPH Cloud Desktop is a simple, free and open-source webtop or web-based desktop which can be installed in your local laptop, cloud server, docker container, Kubernetes, serverless like Cloud Run or even Android via Termux! It is an AI-powered and full-featured frontend and backend architecture aimed to provide users with rich experience to increase productivity and provide common user experience.
 
 ![ULAPPH  Logo](https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs)
-*** Logo designed by my late brother "Rammel"
 
 Too Long; Dont Read (TL;DR)
 ----------------
-- What if you can have a desktop environment on your Chrome browser and be able to open windows, launch applications, watch videos, or even develop your own applications? And you can do this by just accessing a shared webtop server via browser. What if you can run this webtop in your laptop/computer or install it in the cloud like AppEngine or what if you can run it as a docker container in Cloud Run or Kubernetes. That's ULAPPH Cloud Desktop! Think of it as like Windows or Linux operating system but uses web technologies and browser only; no installation required. It can be installed anywhere including an Android device via Termux!
-- Try the demo version at https://www.ulapph.com now! Or just watch the demo video https://www.youtube.com/watch?v=kuwnCQhZawI
-- This is a monolithic Golang application consisting of one main.go source code. Future development aims to split this application into several docker microservices.
--  Written in Go or Golang programming language. Tested to run as standalone server inside a Windows 10 machine or in Google Appegine Standard or in Google Cloud Run or Kubernetes as a docker container.
-- Not yet tested on Mac OS laptop or Linux laptop as I only have Windows 10 :-)
-- Tested fully in Google Cloud but not yet tested on AWS, Azure, Bluemix, Alibaba :-)
+- What if you can have a desktop environment on your Chrome browser and be able to open windows, launch applications, watch videos, or even develop your own applications? And you can do this by just accessing from your TV box, mobile device, laptop or anything with a browser.
+- What if you can run this anywhere from your Android device, to your local PC or to the cloud?
+- Here is the demo version at https://www.ulapph.com Or you can first watch the demo video https://www.youtube.com/watch?v=kuwnCQhZawI
+-  Written in Go or Golang programming language. Tested to run as standalone server inside an Android Termux, Linux machine, Windows 10 machine or in Google Appegine Standard or in Google Cloud Run or Kubernetes as a docker container in any cloud provider.
 
 Versions
 --------------
 - Versioning is based on famous Filipino dishes. https://en.wikipedia.org/wiki/List_of_Philippine_dishes
-- Current version now is "Afridata" - Dockerized, Platform-agnostic version with AI
-![Afritada](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/0050jfCuisine_Foods_Philippines_Baliuag_Bulacanfvf_22.jpg/120px-0050jfCuisine_Foods_Philippines_Baliuag_Bulacanfvf_22.jpg)
-- Previous version: (Adobo-2019) - Appengine version
-![Adobo 2019](https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Chicken_adobo.jpg/120px-Chicken_adobo.jpg)
+- Version 2020: "Afridata" - Dockerized, Platform-agnostic version with AI using IBM Watson
+- Version 2019: "Adobo" - Appengine version
 
 Watch Demo Video (Youtube)
 -----------
@@ -132,12 +129,6 @@ Libraries/Packages Used
     "github.com/boltdb/bolt"
     "github.com/go-redis/redis/v7"
 )``
-
-What exactly can it do?
-------------------
-Kindly create an issue or send me a question so I can tell you if the feature is available or not while pending updates of the documentations.
-- Gmail: edwin.d.vinas@gmail.com
-	     ulapph@gmail.com
 
 Installation Packages
 ------------------

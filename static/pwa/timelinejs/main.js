@@ -1,5 +1,5 @@
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/pwa/timelinejs/service-worker.js')
+  navigator.serviceWorker.register('/static/pwa/timelinejs/service-worker.js')
   .then(function(registration) {
     console.log('Registration successful, scope is:', registration.scope);
   })

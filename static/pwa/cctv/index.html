@@ -8,7 +8,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- pwa manifest -->
-    <link rel="manifest" href="/pwa/cctv/manifest.json?v=1">
+    <link rel="manifest" href="/static/pwa/cctv/manifest.json?v=1">
 
     <!--alertify-->
     <script type="text/javascript" src="/static/js/jquery-1.7.1.min.js"></script>
@@ -17,12 +17,21 @@
     <link rel="stylesheet" href="/static/css/alertify.default.css" id="toggleCSS" />
 
 	<!-- stylesheets are conveniently separated into components -->
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/setup.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/says.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/reply.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/typing.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/input.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/setup.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/says.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/reply.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/typing.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/input.css">
     <link rel="stylesheet" type="text/css" href="/static/css/switch.css">
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-87908378-2"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-87908378-2');
+	</script>
 	<style>
 	body {
 		background: #dcdde0;
@@ -61,7 +70,7 @@
 <div id="chat"></div>
 
 <!-- import the JavaScript file -->
-<script src="/lib/js/chat-bubble/Bubbles.js"></script>
+<script src="/static/lib/js/chat-bubble/Bubbles.js"></script>
 <script>
 var urlParams;
 var match,
@@ -187,7 +196,7 @@ var botUrl = window.location.href;
 var convo = {
   ice: {
     says: ["Hi, I'm ULAPPH CCTV Bot!", 
-    		"<a href=\"" + botUrl + "\" title=\"Click to restart ULAPPH bot!\"><img src=\"/pwa/cctv/cctv.gif\" width=\"100%\" height=\"100%\"></a>", 
+    		"<a href=\"" + botUrl + "\" title=\"Click to restart ULAPPH bot!\"><img src=\"/static/pwa/cctv/cctv.gif\" width=\"100%\" height=\"100%\"></a>", 
     		"Type any text or click button below."
     	],
 	  reply: [
@@ -1022,7 +1031,7 @@ chatWindow.talk(convo)
 <script src="/static/js/channel-firebase-cctv-alarm.js"></script>
 <script src="/static/js/channel-cctv-alarm.js"></script>
 <!--pwa service worker registration-->
-<script src="/pwa/cctv/main.js"></script>
+<script src="/static/pwa/cctv/main.js"></script>
 <!--user latitude/longitude-->
 <script src="/static/js/geolatlon.js"></script>
 </body>

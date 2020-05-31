@@ -29,5 +29,5 @@
 *.key
 *.csr
 #Others
-templates/ulapph-ai-menu.txt
+#templates/ulapph-ai-menu.txt
 20 - TechnologyArchitect.json

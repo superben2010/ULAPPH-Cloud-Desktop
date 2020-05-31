@@ -3864,6 +3864,25 @@ func laterQueueRatings(c context.Context, RTG_FUNC, UID, uid string) {
     //return
 
 }
+// Exec later - Broadcast Location
+func laterQueueBroadcastLoc(c context.Context, RTG_FUNC, url string) {
+	if SYS_STATELESS_SERVER == true {
+		return
+	}
+    //log.Printf("laterQueueRatings")
+    data := map[string]string{}
+    message, err := json.Marshal(data)
+    if err != nil {
+        panic (err)
+    }
+    //log.Printf("Call createHTTPTask()")
+    _, err = createHTTPTask(url, message)
+    if err != nil {
+        log.Fatalf("ERROR: createHTTPTask: %v", err)
+    }
+    //log.Printf("Created Task: %s\n", task.GetName())
+    //return
+}
  
 // Exec later - urlfetcherlus Queries
 func laterUrlFetchInd(c context.Context, RTR_FUNC string, UID, FREQ string) {
@@ -4377,8 +4396,8 @@ func createClientDS(w http.ResponseWriter, r *http.Request) *datastore.Client {
 //D0087
 // newApp creates a new app, returning an error if either the Cloud IAP
 // certificates or the app's audience field cannot be obtained.
-func newApp() (*app, error) {
-	certs, err := certificates()
+func newApp(w http.ResponseWriter, r *http.Request) (*app, error) {
+	certs, err := certificates(w,r)
 	if err != nil {
 		return nil, err
 	}
@@ -7452,7 +7471,7 @@ func displayOauthIcons(w http.ResponseWriter, r *http.Request, TARGET_URL, lref 
 	fmt.Fprintf(w, "<a href=\"/social?SO_FUNC=show-whats-new\" title=\"View all new contents from public/private ULAPPH Cloud Desktops.\"><img src=\"/static/img/whatsnew.png\" height=40 width=40></a>")
 	fmt.Fprintf(w, "<a href=\"%v\" title=\"Chat with our customer service.\"><img src=\"/static/img/chat.png\" height=40 width=40></a>", SYS_GUEST_CHAT_URL)
 	
-	fmt.Fprintf(w, "<a href=\"https://goo.gl/8PJbT8\" title=\"View ULAPPH Cloud Desktop documentations.\"><img src=\"/static/img/help.png\" height=40 width=40></a>")
+	fmt.Fprintf(w, "<a href=\"https://github.com/edwindvinas/ULAPPH-Cloud-Desktop\" title=\"View ULAPPH Cloud Desktop documentations.\"><img src=\"/static/img/help.png\" height=40 width=40></a>")
 	fmt.Fprintf(w, "</div>")
 	
 	return
@@ -7654,7 +7673,8 @@ func displaySocialSites(w http.ResponseWriter, r *http.Request) {
 //D0087
 // validateAssertion validates assertion was signed by Google and returns the
 // associated email and userID.
-func validateAssertion(assertion string, certs map[string]string, aud string) (email string, userID string, err error) {
+func validateAssertion(w http.ResponseWriter, r *http.Request, assertion string, certs map[string]string, aud string) (email string, userID string, err error) {
+	ulapphDebug(w,r, "info", fmt.Sprintf("validateAssertion() %v", ""))
 	token, err := jwt.Parse(assertion, func(token *jwt.Token) (interface{}, error) {
 		keyID := token.Header["kid"].(string)
 		_, ok := token.Method.(*jwt.SigningMethodECDSA)
@@ -7665,6 +7685,7 @@ func validateAssertion(assertion string, certs map[string]string, aud string) (e
 		cert := certs[keyID]
 		return jwt.ParseECPublicKeyFromPEM([]byte(cert))
 	})
+	ulapphDebug(w,r, "info", fmt.Sprintf("token: %#v", token))
 
 	if err != nil {
 		return "", "", err
@@ -7678,6 +7699,8 @@ func validateAssertion(assertion string, certs map[string]string, aud string) (e
 	if claims["aud"].(string) != aud {
 		return "", "", fmt.Errorf("mismatched audience. aud field %q does not match %q", claims["aud"], aud)
 	}
+	ulapphDebug(w,r, "info", fmt.Sprintf("claims: %#v", claims))
+	
 	return claims["email"].(string), claims["sub"].(string), nil
 }
 //D0087
@@ -7697,7 +7720,7 @@ func audience() (string, error) {
 }
 //D0087
 // certificates returns Cloud IAP's cryptographic public keys.
-func certificates() (map[string]string, error) {
+func certificates(w http.ResponseWriter, r *http.Request) (map[string]string, error) {
 	const url = "https://www.gstatic.com/iap/verify/public_key"
 	client := http.Client{
 		Timeout: 30 * time.Second,
@@ -7712,7 +7735,7 @@ func certificates() (map[string]string, error) {
 	if err := dec.Decode(&certs); err != nil {
 		return nil, fmt.Errorf("Decode: %v", err)
 	}
-
+	ulapphDebug(w,r, "info", fmt.Sprintf("certs: %v", certs))
 	return certs, nil
 }
 func checkSession(w http.ResponseWriter, r *http.Request) (FL_OU_USER bool, uid string) {
@@ -7770,16 +7793,18 @@ func checkSession(w http.ResponseWriter, r *http.Request) (FL_OU_USER bool, uid 
 		return true, userName
 	}
     FL_OU_USER = false
-	a, err := newApp()
+	a, err := newApp(w,r)
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
     }
 	assertion := r.Header.Get("X-Goog-IAP-JWT-Assertion")
+	ulapphDebug(w,r, "info", fmt.Sprintf("assertion: %v", assertion))
 	if assertion == "" {
 		fmt.Fprintln(w, "No Cloud IAP header found.")
 		return
 	}
-	uid, _, err = validateAssertion(assertion, a.certs, a.aud)
+	uid, _, err = validateAssertion(w,r,assertion, a.certs, a.aud)
+	ulapphDebug(w,r, "info", fmt.Sprintf("uid: %v", uid))
 	if err != nil {
 		log.Println(err)
 		fmt.Fprintln(w, "Could not validate assertion. Check app logs.")
@@ -11826,6 +11851,9 @@ func genProcAccess(w http.ResponseWriter, r *http.Request, uid, deskName string)
 //checks if the system is a new installation
 //if it is, it redirects to an installer page 
 func checkSysIns(w http.ResponseWriter, r *http.Request) {
+	if SYS_STATELESS_SERVER == true {
+		return
+	}
     //c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -13762,6 +13790,11 @@ func contentsAll(w http.ResponseWriter, r *http.Request) {
         w.Write([]byte("ULAPPH Cloud Desktop: Apologies, this site has been set by Admin to not serve any requests."))
 		return
 	}
+	if SYS_STATELESS_SERVER == true {
+        w.WriteHeader(200)
+        w.Write([]byte("ULAPPH Cloud Desktop: Apologies, this feature is not available at this time."))
+		return
+	}
     log.Printf("contentsAll")
     //c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
@@ -14572,7 +14605,7 @@ func parseAutocompEntries(w http.ResponseWriter, r *http.Request) {
 	buf.WriteString("")
 	buf.WriteString(fmt.Sprintf("{ value: 'public chat', data: '%vchat' },", domRefMatchS))
 	buf.WriteString("")
-	buf.WriteString(fmt.Sprintf("{ value: 'ulapph help', data: 'https://goo.gl/8PJbT8' },"))
+	buf.WriteString(fmt.Sprintf("{ value: 'ulapph help', data: 'https://github.com/edwindvinas/ULAPPH-Cloud-Desktop' },"))
 	buf.WriteString("")
 	buf.WriteString(fmt.Sprintf("{ value: 'access logs, notifications', data: '%vinfodb?DB_FUNC=ULAPPH-NOTIFICATIONS-LOG&SID=ULAPPH-NOTIFICATIONS-LOG' },", domRefMatchS))
 	buf.WriteString("")
@@ -18002,7 +18035,7 @@ const chatTemplateDispA1 = `
 	<head>
 	  <meta charset="UTF-8">
 	  <title>Chat::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	  <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	  <meta name="description" content="ULAPPH Cloud Desktop" />
 	  <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 `
 var chatTemplateA2 = template.Must(template.New("chatTemplateA").Parse(chatTemplateDispA2))
@@ -18190,7 +18223,7 @@ const streamTemplateDispA1 = `
 	<head>
 	  <meta charset="UTF-8">
 	  <title>Stream::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	  <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	  <meta name="description" content="ULAPPH Cloud Desktop" />
 	  <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 		<link rel="stylesheet" href="/static/css/chat-style.css">
 	<style>
@@ -18270,7 +18303,7 @@ const ulocTemplateDispA = `
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <title>Local Storage:ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
   <link rel="shortcut icon" href="/static/img/favicon.ico"/>
-  <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+  <meta name="description" content="ULAPPH Cloud Desktop" />
   <script type="text/javascript" language="javascript" src="/static/js/jquery-1.11.1.min.js"></script>
   <link rel="stylesheet" href="/static/css/localStorage.css" />
   <script src="/static/js/localStorage.js"></script>
@@ -18560,7 +18593,7 @@ const ulocTemplateDispB = `
 <head>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <title>Local Storage::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-  <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+  <meta name="description" content="ULAPPH Cloud Desktop" />
   <link rel="shortcut icon" href="/static/img/favicon.ico"/>
   <link rel="stylesheet" href="/static/css/localStorage.css" />
   <link rel="stylesheet" href="/static/css/bootstrap.min.css">
@@ -20672,7 +20705,7 @@ func editor(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 				}
-				if len(key) != 16 {
+				if key == "" || len(key) != 16 {
 					key = ENCRYPTION_KEY
 				}
 				if mode == "" {
@@ -20718,7 +20751,9 @@ func editor(w http.ResponseWriter, r *http.Request) {
 					fmt.Fprintf(w, "ERROR: Enter text or upload text file.")
 					return
 				}
-				log.Printf("mode: %v", mode)
+				//log.Printf("mode: %v", mode)
+				ulapphDebug(w,r, "info", fmt.Sprintf("mode: %v", mode))
+				ulapphDebug(w,r, "key", fmt.Sprintf("key: %v", key))
 				if mode == "v" {
 					cStr = []byte(text)
 					fileName = fileName+"(as-is).txt"
@@ -23551,10 +23586,17 @@ func ulapphTools(w http.ResponseWriter, r *http.Request) {
 				return
 			case "RandomGeneratorRes":
 				len := r.FormValue("len")
-				num := str2int(len)
-				rs := randSeq2(num)
-				writeHTMLHeader(w, 200)
-				fmt.Fprintf(w, "<input type=\"text\" name=\"ranstr\" value=\"%v\" size=\"%v\" maxlength=\"%v\">", rs, len, len)
+				mode := r.FormValue("mode")
+				if mode == "alphanumeric" {
+					uuidstr, _ := uuid.NewV4()
+					writeHTMLHeader(w, 200)
+					fmt.Fprintf(w, "<input type=\"text\" name=\"ranstr\" value=\"%v\" size=\"%v\" maxlength=\"%v\">", uuidstr, len, len)
+				} else {
+					num := str2int(len)
+					rs := randSeq2(num)
+					writeHTMLHeader(w, 200)
+					fmt.Fprintf(w, "<input type=\"text\" name=\"ranstr\" value=\"%v\" size=\"%v\" maxlength=\"%v\">", rs, len, len)
+				}
 				return
 			case "DWEETIO":
 				redURL := fmt.Sprintf("https://dweet.io/follow/ULAPPH-%v", SYS_SERVER_NAME)
@@ -24620,7 +24662,7 @@ func ulapphTools(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprintf(w, "<div class=\"success2\"><a href=\"https://zxing.appspot.com/generator/\" target=\"qrcode\">QR Code Generator</a></div>")
 				fmt.Fprintf(w, "<div class=\"success2\">[ <a href=\"/infodb?DB_FUNC=ULAPPH-NOTIFICATIONS-LOG&SID=ULAPPH-NOTIFICATIONS-LOG\">Logs</a> ] [ <a href=\"/infodb?DB_FUNC=ULAPPH-NOTIFICATIONS-MAP&SID=ULAPPH-NOTIFICATIONS-MAP&SP_FUNC=MAP_TODAY_ALL&DATE=\">Maps</a> ] [ <a href=\"/settings?q=desktop0\">Settings</a> ] [ <a href=\"/admin-setup\">Admin</a> ] [ <a href=\"/logout\">Logout</a> ]</div>")
 				fmt.Fprintf(w, "<div class=\"info\">Cloud Desktop Build Number:<br>%v</div>", UCD_BUILD_STR)
-				fmt.Fprintf(w, "<div class=\"info\"><img src=\"/static/img/help.png\" width=\"70\" height=\"70\"><br><a href=\"https://goo.gl/8PJbT8\" target=\"help\">ULAPPH Cloud Desktop Help Docs</a></div>")
+				fmt.Fprintf(w, "<div class=\"info\"><img src=\"/static/img/help.png\" width=\"70\" height=\"70\"><br><a href=\"https://github.com/edwindvinas/ULAPPH-Cloud-Desktop\" target=\"help\">ULAPPH Cloud Desktop Help Docs</a></div>")
 				
 				if err := htmlFooterModalTools.Execute(w, ""); err != nil {
 				  panic(err)
@@ -24699,7 +24741,7 @@ func ulapphTools(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprintf(w, "<div class=\"success2\"><a href=\"https://www.soundstep.com/blog/experiments/jsdetection/\">Magic Xylophone</a></div>")
 				fmt.Fprintf(w, "<div class=\"success2\">[ <a href=\"/infodb?DB_FUNC=ULAPPH-NOTIFICATIONS-LOG&SID=ULAPPH-NOTIFICATIONS-LOG\">Logs</a> ] [ <a href=\"/infodb?DB_FUNC=ULAPPH-NOTIFICATIONS-MAP&SID=ULAPPH-NOTIFICATIONS-MAP&SP_FUNC=MAP_TODAY_ALL&DATE=\">Maps</a> ] [ <a href=\"/settings?q=desktop0\">Settings</a> ] [ <a href=\"/admin-setup\">Admin</a> ] [ <a href=\"/logout\">Logout</a> ]</div>")
 				fmt.Fprintf(w, "<div class=\"info\">Cloud Desktop Build Number:<br>%v</div>", UCD_BUILD_STR)
-				fmt.Fprintf(w, "<div class=\"info\"><img src=\"/static/img/help.png\" width=\"70\" height=\"70\"><br><a href=\"https://goo.gl/8PJbT8\" target=\"help\">ULAPPH Cloud Desktop Help Docs</a></div>")
+				fmt.Fprintf(w, "<div class=\"info\"><img src=\"/static/img/help.png\" width=\"70\" height=\"70\"><br><a href=\"https://github.com/edwindvinas/ULAPPH-Cloud-Desktop\" target=\"help\">ULAPPH Cloud Desktop Help Docs</a></div>")
 				
 				if err := htmlFooterModalTools.Execute(w, ""); err != nil {
 				  panic(err)
@@ -49176,7 +49218,7 @@ const htmlWidgetBrowserA = `
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
   <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-  <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+  <meta name="description" content="ULAPPH Cloud Desktop" />
   <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
   <link rel="shortcut icon" href="/static/img/favicon.ico"/>
   <link rel="stylesheet" type="text/css" media="all" href="/static/css/searchbar-style.css">
@@ -49317,7 +49359,7 @@ const htmlWidgetBrowserH = `
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
   <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-  <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+  <meta name="description" content="ULAPPH Cloud Desktop" />
   <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
   <link rel="shortcut icon" href="/static/img/favicon.ico"/>
   <link rel="stylesheet" type="text/css" media="all" href="/static/css/searchbar-style.css">
@@ -49342,7 +49384,7 @@ const htmlWidgetBrowserC1 = `
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
   <title>Loading ULAPPH Cloud Desktop::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-  <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+  <meta name="description" content="ULAPPH Cloud Desktop" />
   <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
   <link rel="shortcut icon" href="/static/img/favicon.ico"/>
   <meta http-equiv="refresh" content="{{.}}" />
@@ -49428,7 +49470,7 @@ const htmlWidgetBrowserAB = `
       </div><!-- @end #searchfield -->
  
       <div id="outputbox">
-        <p id="outputcontent" align="center"><a href="/website?q=home">Contents</a> | <a href="/social?SO_FUNC=show-trending">Trending</a> | <a href="/social?SO_FUNC=show-whats-new">Whats New!</a> | <a href="/search?f=glow2&In ULAPPH&i=yes">Goto Multi-Search</a></p>
+        <p id="outputcontent" align="center"><!--a href="/website?q=home">Contents</a> | <a href="/social?SO_FUNC=show-trending">Trending</a> | <a href="/social?SO_FUNC=show-whats-new">Whats New!</a> | <a href="/search?f=glow2&In ULAPPH&i=yes">Goto Multi-Search</a--></p>
       </div>
     </div><!-- @end #content -->
   </div><!-- @end #w -->
@@ -49665,6 +49707,11 @@ const htmlWidgetRanGenTool = `
 <body>
 This will generate random string with alphanumeric characters. Can be used to generate passwords or secret keys.
 <form action="/tools?FUNC=WIDGET&t=RandomGeneratorRes" method="POST">
+<select name="mode" value="alphanumeric">
+  <option value="alphanumeric">Alphanumeric</option>
+  <option value="uuid">UUID</option>
+</select>
+<br>
 <input name="len" value="" placeholder="Enter length" size="10" maxlength="500"/>
 <input type="submit" name="rangen" value="Generate"/>
 </form>
@@ -50773,7 +50820,7 @@ const iconsSettingsTemplateHeaderHTML = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>Settings::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/pulldown-tabzilla-min.css" />
@@ -50828,7 +50875,7 @@ const genericTableDispHdr2 = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>{{.STR_FILLER3}}::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -50904,7 +50951,7 @@ const genericTableDispHdrNC2 = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>{{.STR_FILLER3}}::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -50998,7 +51045,7 @@ const infoDBTemplateHeaderHTMLSlidesAdmin = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>Slides::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51085,7 +51132,7 @@ const infoDBTemplateHeaderHTMLSlidesDirectory = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>Directory::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51137,7 +51184,7 @@ const showTrendingRecs = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>ULAPPH Trending Contents::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51180,7 +51227,7 @@ const showPeopleDirRecs = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>ULAPPH People Directory::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51221,7 +51268,7 @@ const showSitesDirRecs = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>ULAPPH Cloud Desktop Directory::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51263,7 +51310,7 @@ const showWhatsNewRecs = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>ULAPPH Whats New Contents::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51307,7 +51354,7 @@ const showDiscussionsRecs = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>ULAPPH Recent Discussions::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51353,7 +51400,7 @@ const showAllRecentsRecs = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>ULAPPH Recents::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51394,7 +51441,7 @@ const infoDBTemplateHeaderHTMLArticlesAdmin = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>Articles::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51479,7 +51526,7 @@ const iconsSettingsTemplateHeaderHTMLAds = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>AdminAds::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51521,7 +51568,7 @@ const iconsSettingsTemplateHeaderHTMLSL = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>AdminSlides::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51566,7 +51613,7 @@ const iconsSettingsTemplateHeaderHTMLAL = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>AdminArticles::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51609,7 +51656,7 @@ const iconsSettingsTemplateHeaderHTMLMD = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>Media Gallery::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51725,7 +51772,7 @@ const iconsSettingsTemplateHeaderHTMLMDAdmin = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>Media Gallery::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51843,7 +51890,7 @@ const iconsSettingsTemplateHeaderHTMLMDUAdmin = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>Media Gallery::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51917,7 +51964,7 @@ const iconsSettingsTemplateHeaderHTMLSLU = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>Admin Slides::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -51974,7 +52021,7 @@ const iconsSettingsTemplateHeaderHTMLSLA = `
 	<meta name="viewport" content="width=device-width,initial-scale=1">
  
 	<title>Admin Articles::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-	<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+	<meta name="description" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://www.datatables.net/rss.xml">
 	<link rel="stylesheet" type="text/css" href="/static/css/table-jquery.dataTables.css">
@@ -52089,7 +52136,7 @@ const mediaSimpleGal1A = `
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Photo Gallery::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-        <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+        <meta name="description" content="ULAPPH Cloud Desktop" />
         <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
         <meta name="author" content="Codrops"/>
         <link rel="shortcut icon" href="/static/img/favicon.ico"/>
@@ -53756,8 +53803,8 @@ const mediaSettingsTemplateTableHTMLFooter9 = `
 	<h3>[ <a href="/slides">Slides</a> ] [ <a href="/articles">Articles</a> ] [ <a href="/media">Media</a> ]</h3>
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>
-    <a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>	
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>
+    <!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->	
 </body>
 </html>
 `
@@ -58011,11 +58058,13 @@ func procBroadcastContentsAll(w http.ResponseWriter, r *http.Request) {
 //executed only when user manually sets the lat/lon via myPreferences
 func procBroadcastCustomLoc(w http.ResponseWriter, r *http.Request, uid, latlon string) {
     //c := appengine.NewContext(r)
+	c, cancel := context.WithCancel(context.Background())
+	    defer cancel()
 	IS_SEARCH_SERVER, SEARCH_SERVER, _ := getSitesServer(w,r)
 	//if this server is not sites server
+	URL := fmt.Sprintf("%v/social?SO_FUNC=proc-broadcast-location&custom=%v&uid=%v&xhost=%v&xpic=%v", SEARCH_SERVER, latlon, uid, domRefMatchS, getProfilePic(w, r, uid))
 	if IS_SEARCH_SERVER != "Y" {
 		//Post data to server
-		URL := fmt.Sprintf("%v/social?SO_FUNC=proc-broadcast-location&custom=%v&uid=%v&xhost=%v&xpic=%v", SEARCH_SERVER, latlon, uid, domRefMatchS, getProfilePic(w, r, uid))
 		req, err := http.NewRequest("POST", URL, nil)
         //client := urlfetch.Client(c)
         client := &http.Client{}
@@ -58023,6 +58072,10 @@ func procBroadcastCustomLoc(w http.ResponseWriter, r *http.Request, uid, latlon 
 		if err != nil {
 			panic(err)
 		}
+	} else {
+		time.AfterFunc(5*time.Second, func() {
+			laterQueueBroadcastLoc(c, "proc-broadcast-location", URL)
+		})
 	}
 	return
 }
@@ -58404,11 +58457,13 @@ func procBroadcastPresence(w http.ResponseWriter, r *http.Request) {
 //executed only when user logs in to UWM desktop
 func procBroadcastUserLoc(w http.ResponseWriter, r *http.Request, UID, latLon string) {
     //c := appengine.NewContext(r)
+	c, cancel := context.WithCancel(context.Background())
+	    defer cancel()
 	IS_SEARCH_SERVER, SEARCH_SERVER, _ := getSitesServer(w,r)
 	//if this server is not sites server
+	URL := fmt.Sprintf("%v/social?SO_FUNC=proc-broadcast-location&uid=%v&xll=%v&xhost=%v&xpic=%v", SEARCH_SERVER, UID, latLon, domRefMatchS, getProfilePic(w, r, UID))
 	if IS_SEARCH_SERVER != "Y" && UID != "" {
 		//Post data to server
-		URL := fmt.Sprintf("%v/social?SO_FUNC=proc-broadcast-location&uid=%v&xll=%v&xhost=%v&xpic=%v", SEARCH_SERVER, UID, latLon, domRefMatchS, getProfilePic(w, r, UID))
 		req, err := http.NewRequest("POST", URL, nil)
         //client := urlfetch.Client(c)
         client := &http.Client{}
@@ -58416,6 +58471,10 @@ func procBroadcastUserLoc(w http.ResponseWriter, r *http.Request, UID, latLon st
 		if err != nil {
 			//panic(err)
 		}
+	} else {
+		time.AfterFunc(5*time.Second, func() {
+			laterQueueBroadcastLoc(c, "proc-broadcast-location", URL)
+		})
 	}
 	return
 }
@@ -66531,12 +66590,12 @@ var userAccessTemplateMobileRootSearch = template.Must(template.New("userAccessT
   <head>
     <title>Search::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <!--[if lte IE 8]>
         <link rel="stylesheet" href="/static/css/home1.css">
@@ -66602,12 +66661,12 @@ var userAccessTemplateMobileRootAll = template.Must(template.New("userAccessTemp
   <head>
     <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />   	
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <!--[if lte IE 8]>
         <link rel="stylesheet" href="/static/css/home1.css">
@@ -66678,12 +66737,12 @@ var userAccessTemplateMobileDesktop0 = template.Must(template.New("userAccessTem
   <head>
     <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." /> 	
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <!--[if lte IE 8]>
         <link rel="stylesheet" href="/static/css/home1.css">
@@ -66742,6 +66801,14 @@ var userAccessTemplateDesktop0Head1 = template.Must(template.New("userAccessTemp
 <!DOCTYPE HTML>
 <html manifest="/cache?q=desktop0&uid={{.}}" lang="en-US" class="no-js" >
   <head>
+    <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="description" content="ULAPPH Cloud Desktop" />
+    <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="author" content="ULAPPH Cloud Desktop" />
+    <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
+    <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<!-- Global site tag (gtag.js) - Google Analytics -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-87908378-2"></script>
 	<script>
@@ -66751,14 +66818,6 @@ var userAccessTemplateDesktop0Head1 = template.Must(template.New("userAccessTemp
 
 	  gtag('config', 'UA-87908378-2');
 	</script>
-    <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
-    <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
-    <meta name="author" content="ULAPPH Cloud Desktop" />
-    <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
-    <link rel="shortcut icon" href="/static/img/favicon.ico"/>
  	
 `))
  
@@ -66767,6 +66826,14 @@ var userAccessTemplateDesktopNHead1 = template.Must(template.New("userAccessTemp
 <!DOCTYPE HTML>
 <html manifest="/cache?q=desktopN&d={{.}}" lang="en-US" class="no-js" >
   <head>
+    <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="description" content="ULAPPH Cloud Desktop" />
+    <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
+    <meta name="author" content="ULAPPH Cloud Desktop" />
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
+    <link rel="shortcut icon" href="/static/img/favicon.ico"/> 
 	<!-- Global site tag (gtag.js) - Google Analytics -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-87908378-2"></script>
 	<script>
@@ -66776,15 +66843,6 @@ var userAccessTemplateDesktopNHead1 = template.Must(template.New("userAccessTemp
 
 	  gtag('config', 'UA-87908378-2');
 	</script>
-    <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
-    <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
-    <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
-    <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
-    <link rel="shortcut icon" href="/static/img/favicon.ico"/> 
-	
 `))
  
 //cache files
@@ -66887,6 +66945,15 @@ var userAccessTemplateDesktop0Part1 = template.Must(template.New("userAccessTemp
 <!DOCTYPE HTML>
 <html lang="en-US" class="no-js">
   <head>
+    <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="description" content="ULAPPH Cloud Desktop" />
+    <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
+    <meta name="author" content="ULAPPH Cloud Desktop" />
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
+    <link rel="shortcut icon" href="/static/img/favicon.ico"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="{{.}}"/>
 	<!-- Global site tag (gtag.js) - Google Analytics -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-87908378-2"></script>
 	<script>
@@ -66896,22 +66963,20 @@ var userAccessTemplateDesktop0Part1 = template.Must(template.New("userAccessTemp
 
 	  gtag('config', 'UA-87908378-2');
 	</script>
-    <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
-    <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
-    <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
-    <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
-    <link rel="shortcut icon" href="/static/img/favicon.ico"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="{{.}}"/>
-
 `))
  
 var userAccessTemplateDesktop0Part1a = template.Must(template.New("userAccessTemplateDesktop0Part1a").Parse(`
 <!DOCTYPE HTML>
 <html lang="en-US" class="no-js">
   <head>
+    <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="description" content="ULAPPH Cloud Desktop" />
+    <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
+    <meta name="author" content="ULAPPH Cloud Desktop" />
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
+    <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<!-- Global site tag (gtag.js) - Google Analytics -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-87908378-2"></script>
 	<script>
@@ -66921,15 +66986,6 @@ var userAccessTemplateDesktop0Part1a = template.Must(template.New("userAccessTem
 
 	  gtag('config', 'UA-87908378-2');
 	</script>
-    <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
-    <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
-    <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
-    <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
-    <link rel="shortcut icon" href="/static/img/favicon.ico"/>
-
 `))
 var userAccessTemplateDesktop0Part2 = template.Must(template.New("userAccessTemplateDesktop0Part2").Parse(`
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/pulldown-tabzilla-min.css" />
@@ -67224,11 +67280,11 @@ var htmlHeaderModal = template.Must(template.New("htmlHeaderModal").Parse(`
   <head>
     <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/modalWindow.css"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/msgs.css" />
@@ -67256,11 +67312,11 @@ var mobileControl = template.Must(template.New("mobileControl").Parse(`
 <head>
     <title>MC::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<link href='https://fonts.googleapis.com/css?family=Sansita+One' rel='stylesheet' type='text/css'>
 	<link href='/css/mobileControl.css' rel='stylesheet' type='text/css'>
@@ -67390,11 +67446,11 @@ var htmlHeaderModalProfile = template.Must(template.New("htmlHeaderModalProfile"
   <head>
     <title>Profile::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/modalWindow.css"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/msgs.css" />
@@ -67450,11 +67506,11 @@ var htmlEditorHeader = template.Must(template.New("htmlEditorHeader").Parse(`
   <head>
     <title>Editor::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" href="/static/css/ace-styles.css" type="text/css" media="screen" charset="utf-8">
     <script async="true" src="/static/js/ace-source-code-pro.js"></script>
@@ -67939,11 +67995,11 @@ var htmlEditorHeaderReader = template.Must(template.New("htmlEditorHeaderReader"
   <head>
     <title>Editor::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" href="/static/css/ace-stylesReader.css" type="text/css" media="screen" charset="utf-8">
     <script async="true" src="/static/js/ace-source-code-pro.js"></script>	
@@ -68005,7 +68061,7 @@ var htmlEditorBodyReader = template.Must(template.New("htmlEditorBodyReader").Pa
 <br>
 <a href="#" onclick="env.playTTS(); return false;"><img src="/static/img/tts.png" width="35" height="35" title="Text to Speech"></a>
 <br>
-<a href="https://goo.gl/8PJbT8" target="Help"><img src="/static/img/help.png" title="Help" width="35" height="35"></a>
+<a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop" target="Help"><img src="/static/img/help.png" title="Help" width="35" height="35"></a>
 			
 <main class="cd-main-content">
 <div id="editor-container">Loading content...</div>	
@@ -68318,11 +68374,11 @@ var htmlHeaderModalAds = template.Must(template.New("htmlHeaderModalAds").Parse(
   <head>
     <title>Ads::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/modalWindow.css"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/msgs.css" />
@@ -68341,11 +68397,11 @@ var htmlHeaderAdmin = template.Must(template.New("htmlHeaderAdmin").Parse(`
   <head>
     <title>Admin::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/style-search.css"/>
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/static/css/mobiSearch.css" />
@@ -68370,11 +68426,11 @@ var htmlHeaderSearchGlow = template.Must(template.New("htmlHeaderSearchGlow").Pa
   <head>
     <title>Search::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/search_glowing.css"/>
 	<link rel="stylesheet" media="screen,projection,tv" href="/static/css/msgs.css" />
@@ -68391,7 +68447,7 @@ var htmlHeaderFB = template.Must(template.New("htmlHeaderFB").Parse(`
   <head>
     <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
@@ -68746,8 +68802,8 @@ var htmlFooterSearch = template.Must(template.New("htmlFooterSearch").Parse(`
 	<hr>
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
-	<a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
+	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
 	<script src="/static/js/pulldown-tabzilla-dynamic.js"></script>
 `))
 var htmlHeaderGB = template.Must(template.New("htmlHeaderGB").Parse(`
@@ -68756,11 +68812,11 @@ var htmlHeaderGB = template.Must(template.New("htmlHeaderGB").Parse(`
   <head>
     <title>Guestbook::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <!--[if lte IE 8]>
         <link rel="stylesheet" href="/static/css/home1.css">
@@ -68806,11 +68862,11 @@ var htmlHeaderGBSocial = template.Must(template.New("htmlHeaderGBSocial").Parse(
   <head>
     <title>Discussion::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
 	<script src="/static/lib/js/commento/commento.js"></script>
     <style>
     .content-wrapper {
@@ -68848,7 +68904,7 @@ var htmlHeaderGBSocial = template.Must(template.New("htmlHeaderGBSocial").Parse(
     </div>
 	<br>
 	<center>
-		Powered by <a href="https://goo.gl/8PJbT8">ULAPPH Cloud Desktop</a>
+		Powered by <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>
 	</center>
   </body>
     <!--Comments-->
@@ -68892,11 +68948,11 @@ var htmlHeaderGBChannel = template.Must(template.New("htmlHeaderGBChannel").Pars
   <head>
     <title>Guestbook::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <!--[if lte IE 8]>
         <link rel="stylesheet" href="/static/css/home1.css">
@@ -68947,12 +69003,12 @@ var htmlHeaderModalRefresh = template.Must(template.New("htmlHeaderModalRefresh"
   <head>
     <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<meta http-equiv="refresh" content="{{.}}" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/modalWindow.css"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/msgs.css" />
@@ -68971,11 +69027,11 @@ var htmlHeaderModalRefreshNo = template.Must(template.New("htmlHeaderModalRefres
   <head>
     <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/modalWindow.css"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/msgs.css" />
@@ -68993,11 +69049,11 @@ var htmlHeaderModalRefreshNoHome = template.Must(template.New("htmlHeaderModalRe
   <head>
     <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/modalWindow.css"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/msgs.css" />
@@ -69022,12 +69078,12 @@ var htmlHeaderModalBlink = template.Must(template.New("htmlHeaderModalBlink").Pa
   <head>
     <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<meta http-equiv="refresh" content="{{.}}" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/modalWindow.css"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/msgs.css" />
@@ -69079,12 +69135,12 @@ var htmlHeaderModalBlinkColor = template.Must(template.New("htmlHeaderModalBlink
   <head>
     <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<meta http-equiv="refresh" content="{{.}}" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/modalWindow.css"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/msgs.css" />
@@ -69140,12 +69196,12 @@ const htmlHeaderGoogleMapsC = `
   <head>
     <title>Google Maps::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<meta http-equiv="refresh" content="{{.}}" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<script type='text/javascript' src='https://code.jquery.com/jquery-1.4.4.min.js'></script>
 `
@@ -69212,12 +69268,12 @@ var htmlHeaderModalBlinkColorLinkify = template.Must(template.New("htmlHeaderMod
   <head>
     <title>ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<meta http-equiv="refresh" content="{{.}}" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/modalWindow.css"/>
     <link rel="stylesheet" media="screen,projection,tv" href="/static/css/msgs.css" />
@@ -69303,8 +69359,8 @@ var htmlFooterModal = template.Must(template.New("htmlFooterModal").Parse(`
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>
-	<a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>
+	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
 	<!--script type="text/javascript" src="//s7.addthis.com/static/js/300/addthis_widget.js#pubid={{.}}"></script-->
   </body>
 </html>
@@ -69333,8 +69389,8 @@ var htmlFooterModalKnock = template.Must(template.New("htmlFooterModal").Parse(`
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>
-	<a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>
+	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
 	<!--script type="text/javascript" src="//s7.addthis.com/static/js/300/addthis_widget.js#pubid={{.}}"></script-->
   </body>
 </html>
@@ -69477,6 +69533,7 @@ var textCryptoBody = template.Must(template.New("textCryptoBody").Parse(`
 	<head>
 		<title>ULAPPH Encryption::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
 		<link rel="shortcut icon" href="/static/img/favicon.ico"/>
+		<link rel="stylesheet" href="/static/css/bootstrap.min.css">
 	</head>
 	<body>
 			<form name="text-css" action="/editor?EDIT_FUNC=CRYPTO" method="post" enctype="multipart/form-data">
@@ -69516,9 +69573,9 @@ var textTimelineBodyRaw = template.Must(template.New("textDrawBodyRaw").Parse(`
     <meta name="apple-touch-fullscreen" content="yes">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <!-- CSS-->
-    <link rel="stylesheet" href="/timelines/css/timeline.css?v1">
+    <link rel="stylesheet" href="/static/timelines/css/timeline.css?v1">
     <!--FONT-->
-    <link rel="stylesheet" href="/timelines/css/fonts/font.default.css?v1">
+    <link rel="stylesheet" href="/static/timelines/css/fonts/font.default.css?v1">
     <!-- Style-->
     <style>
       html, body {
@@ -69559,9 +69616,9 @@ var textTimelineBody = template.Must(template.New("textDrawBody").Parse(`
     <meta name="apple-touch-fullscreen" content="yes">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <!-- CSS-->
-    <link rel="stylesheet" href="/timelines/css/timeline.css?v1">
+    <link rel="stylesheet" href="/static/timelines/css/timeline.css?v1">
     <!--FONT-->
-    <link rel="stylesheet" href="/timelines/css/fonts/font.default.css?v1">
+    <link rel="stylesheet" href="/static/timelines/css/fonts/font.default.css?v1">
     <!-- Style-->
     <style>
       html, body {
@@ -69660,7 +69717,7 @@ var textToSpeechBody = template.Must(template.New("textToSpeechBody").Parse(`
 		<title>Text To Speech::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta charset="UTF-8">
-		<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+		<meta name="description" content="ULAPPH Cloud Desktop" />
 		<meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
 		<meta name="author" content="ULAPPH Cloud Desktop">
 		<meta name="copyright" content="ULAPPH Cloud Desktop">
@@ -69956,8 +70013,8 @@ var htmlFooterModalTools = template.Must(template.New("htmlFooterModalTools").Pa
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>
-     <a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>
+     <!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
 	 <script src="/static/js/tab5.js?alignment=left&amp;color=00BCBA" type="text/javascript"></script>
   </body>
 </html>
@@ -69970,7 +70027,7 @@ var htmlToolsConnection = template.Must(template.New("htmlToolsConnection").Pars
 <meta charset=utf-8>
 <meta name="viewport" content="width=620">
 <title>Monitor::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+<meta name="description" content="ULAPPH Cloud Desktop" />
 <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 <link rel="stylesheet" href="/static/css/html5demos.css">
 <script src="/static/js/h5utils.js"></script></head>
@@ -70265,11 +70322,11 @@ var userAccessTemplateDesktopNPart1 = template.Must(template.New("userAccessTemp
   <head>
     <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
     <link rel="stylesheet" type="text/css" media="screen" href="{{.}}"/>
  
@@ -70281,11 +70338,11 @@ var userAccessTemplateDesktopNPart1a = template.Must(template.New("userAccessTem
   <head>
     <title>Desktop0::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 `))
  
@@ -70295,11 +70352,11 @@ var userAccessTemplateUWMPart1 = template.Must(template.New("userAccessTemplateU
   <head>
     <title>UWM::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+    <meta name="description" content="ULAPPH Cloud Desktop" />
     <meta name="copyright" content="Copyright 2014-2020 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
-    <link rel="os-touch-icon" href="images/custom_icon.ico"/>
+    <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	<meta name="theme-color" content="{{.STR_FILLER1}}">
 	<link rel="icon" sizes="192x192" href="/static/img/banaosystems-login.png">
@@ -70399,8 +70456,8 @@ var userRegistrationTemplate = template.Must(template.New("userRegistrationTempl
 	<hr>
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>
-    <a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>
+    <!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
 	<br>
 	<div id="register" class="modalDialog">
 		<div>
@@ -70565,7 +70622,7 @@ var mobileBodyTemplateContentA = template.Must(template.New("mobileBodyTemplateC
             </a>
         </li>
         <li id="Help">
-         <a href="https://goo.gl/8PJbT8">
+         <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">
              <em><span>Help</span></em><br>
                 <img src="/static/img/help.png" title="Help" height="40" width="40"/>
             </a>
@@ -72745,7 +72802,7 @@ var desktopBodyTabzillaTemplateMobilePublic = template.Must(template.New("deskto
  
 var desktopBodyTabzillaTemplateMobilePublicChan = template.Must(template.New("desktopBodyTabzillaTemplateMobilePublicChan").Parse(`
 <center>&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.</center>
-<center><a href="https://goo.gl/8PJbT8" title="ULAPPH Cloud Desktop Documentation">Powered by ULAPPH Cloud Desktop</a></center>
+<center><a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop" title="ULAPPH Cloud Desktop Documentation">Powered by ULAPPH Cloud Desktop</a></center>
 <br>
 <script src="/static/js/pulldown-tabzilla-dynamic.js"></script>
 	<script src="/static/js/alertify.min.js"></script>
@@ -72764,8 +72821,8 @@ var generalFooterBodyHTMLzilla = template.Must(template.New("generalFooterBodyHT
 	<br>
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
-	<a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
+	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
 </body>
 </html>
 `))
@@ -72832,8 +72889,8 @@ var outputFooterTemplate = template.Must(template.New("outputFooterTemplate").Pa
     <hr>
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
-	<a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
+	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
   </body>
 </html>
 `))
@@ -72867,8 +72924,8 @@ var umpFooterTemplate = template.Must(template.New("umpFooterTemplate").Parse(`
 	<hr>
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
-	<a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
+	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
   </body>
 </html>
 `))
@@ -72877,8 +72934,8 @@ var yvpFooterTemplate = template.Must(template.New("yvpFooterTemplate").Parse(`
 	<hr>
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
-	<a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
+	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
   </body>
 </html>
 `))
@@ -72888,8 +72945,8 @@ var outputFooterTemplateChannel = template.Must(template.New("outputFooterTempla
     <hr>
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
-	<a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
+	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
 	<script src="/static/js/alertify.min.js"></script>
 	<!--script src="/static/js/channel.js" type="text/javascript"></script-->
 	<!--script src="/static/js/soundOnOff.js" type="text/javascript"></script-->
@@ -72910,8 +72967,8 @@ var outputFooterTemplateToken = template.Must(template.New("outputFooterTemplate
     <hr>
 	&copy; 2014-2020 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
-    <a href="https://goo.gl/8PJbT8"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
-	<a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a>
+    <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a>	
+	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
   </body>
 </html>
 `))
@@ -72922,7 +72979,7 @@ var multiUploaderImagesHdr = template.Must(template.New("multiUploaderImagesHdr"
 <meta charset="utf-8">
  
 <title>Dropzone::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+<meta name="description" content="ULAPPH Cloud Desktop" />
 <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 <script src="/static/js/dropzone.js"></script>
 <link rel="stylesheet" href="/static/css/bootstrap.min.css">
@@ -72972,7 +73029,7 @@ var multiUploaderImagesHdr2 = template.Must(template.New("multiUploaderImagesHdr
 <meta charset="utf-8">
  
 <title>Dropzone::ulapph-demo.appspot.com - ULAPPH Cloud Desktop</title>
-<meta name="description" content="This is the private cloud desktop of Edwin D. Vinas powered by ULAPPH Cloud Desktop!" />
+<meta name="description" content="ULAPPH Cloud Desktop" />
 <link rel="shortcut icon" href="/static/img/favicon.ico"/>
 <script src="/static/js/dropzone.js"></script>
 <link rel="stylesheet" href="/static/css/dropzone.css">
@@ -86954,7 +87011,7 @@ func deleteSearchIndex(w http.ResponseWriter, r *http.Request, idx, idxKey strin
 }
 //encrypter
 //encrypts a given text and an encryption key
-func encrypter2(w http.ResponseWriter, r *http.Request, TEXT, ENCRYPTION_KEY string) (encStr []byte) {
+func encrypter2(w http.ResponseWriter, r *http.Request, TEXT, thisKey string) (encStr []byte) {
 	_, uid := checkSession(w,r)
 	//c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
@@ -86962,10 +87019,8 @@ func encrypter2(w http.ResponseWriter, r *http.Request, TEXT, ENCRYPTION_KEY str
     updateUserActiveData(w, r, c, uid, "encryption-custom")
 	thisCont := TEXT
 	//encrypt content
-	block, _ := aes.NewCipher([]byte(ENCRYPTION_KEY))
- 
+	block, _ := aes.NewCipher([]byte(thisKey))
 	b := base64.URLEncoding.EncodeToString([]byte(thisCont))
- 
 	ciphertext := make([]byte, aes.BlockSize+len(b))
 	iv := ciphertext[:aes.BlockSize]
 	if _, err := io.ReadFull(crand.Reader, iv); err != nil {
@@ -86976,13 +87031,11 @@ func encrypter2(w http.ResponseWriter, r *http.Request, TEXT, ENCRYPTION_KEY str
 	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(b))
 	str := base64.StdEncoding.EncodeToString(ciphertext)
 	ciphertext = []byte(str)
-	
 	return ciphertext
-	
 }
 //decrypter
 //decrypts a given text and an decryption key
-func decrypter2(w http.ResponseWriter, r *http.Request, TEXT, ENCRYPTION_KEY string) (decStr []byte) {
+func decrypter2(w http.ResponseWriter, r *http.Request, TEXT, thisKey string) (decStr []byte) {
 	//switch
 	_, uid := checkSession(w,r)
 	//c := appengine.NewContext(r)
@@ -86992,7 +87045,7 @@ func decrypter2(w http.ResponseWriter, r *http.Request, TEXT, ENCRYPTION_KEY str
 	text := []byte(TEXT)
 	text, _ = base64.StdEncoding.DecodeString(string(text))
 	//decrypt content
-	block, _ := aes.NewCipher([]byte(ENCRYPTION_KEY))
+	block, _ := aes.NewCipher([]byte(thisKey))
 	iv := text[:aes.BlockSize]
 	text = text[aes.BlockSize:]
 	cfb := cipher.NewCFBDecrypter(block, iv)

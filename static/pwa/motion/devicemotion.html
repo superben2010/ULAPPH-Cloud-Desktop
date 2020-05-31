@@ -120,10 +120,12 @@
           localStorage["soundBusy"] = "N";
           wakeLockEnabled = true;
           toggleEl.value = "Motion Alarm is enabled";
+		  console.log(toggleEl.value);
         } else {
           localStorage["soundBusy"] = "Y";
           wakeLockEnabled = false;
           toggleEl.value = "Motion Alarm is disabled";
+		  console.log(toggleEl.value);
         }
       }, false);
     </script>
@@ -152,6 +154,7 @@
         };
 
         function soundAlarm() {
+			console.log("soundAlarm()");
             if (localStorage["soundBusy"] === "Y") {
                 return;
             }
@@ -193,7 +196,9 @@
                 var difx = Math.abs(parseInt(localStorage["x"]) - parseInt(x));
                 var dify = Math.abs(parseInt(localStorage["y"]) - parseInt(y));
                 //alert("difx: "+difx);
+				console.log("difx: "+difx);
                 //alert("dify: "+dify);
+				console.log("dify: "+dify);
                 //save x & y
                 localStorage["x"] = x;
                 localStorage["y"] = y;
@@ -203,8 +208,10 @@
                 scope.zoomTarget = 0.5 + 4.0 * factory;
                 if (difx > 0 || dify > 0) {
                     //value changed
+					console.log("value changed");
                     soundAlarm();
                     //alert("motion detected!");
+					console.log("motion detected!");
                 }
             });
         } else {

@@ -281,7 +281,22 @@ angular.module('myApp', ['ui.tree'])
 		    "id": 100,
 		    "title": "Testing",
 		    "url": "",
-		    "nodes": []
+		    "nodes": [{
+				"id": 10000000,
+				"title": "Google Origin.1.1.1.1",
+				"url": "",
+				"nodes": [{
+					"id": 100000000,
+					"title": "Google Origin.1.1.1.1.1",
+					"url": "",
+					"nodes": [{
+						"id": 1000000000,
+						"title": "This is a very long title here",
+						"url": "http://www.google.com",
+						"nodes": []
+					}]
+				}]
+			}]
 		 }];
       	$scope.data = tempJSON;
       }

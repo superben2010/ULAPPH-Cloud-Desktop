@@ -8,14 +8,14 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- pwa manifest -->
-    <link rel="manifest" href="/chat-bubble/manifest.json?v=2">
+    <link rel="manifest" href="/static/chat-bubble/manifest.json?v=2">
 
 	<!-- stylesheets are conveniently separated into components -->
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/setup.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/says.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/reply.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/typing.css">
-	<link rel="stylesheet" media="all" href="/lib/css/chat-bubble/input.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/setup.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/says.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/reply.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/typing.css">
+	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/input.css">
     <script type="text/javascript" src="/static/js/jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="/static/js/soundmanager2.js"></script>
 	<style>
@@ -58,7 +58,7 @@
 <div id="chat"></div>
 
 <!-- import the JavaScript file -->
-<script src="/lib/js/chat-bubble/Bubbles.js"></script>
+<script src="/static/lib/js/chat-bubble/Bubbles.js"></script>
 <script>
 var urlParams;
 var match,
@@ -191,7 +191,7 @@ var botUrl = window.location.href;
 var convo = {
   ice: {
     says: ["Hi, I'm ULAPPH Bot!", 
-    		"<a href=\"" + botUrl + "\" title=\"Click to restart ULAPPH bot!\"><img src=\"/chat-bubble/bot.gif\"></a>", 
+    		"<a href=\"" + botUrl + "\" title=\"Click to restart ULAPPH bot!\"><img src=\"/static/chat-bubble/bot.gif\"></a>", 
     		"Type any text or click button below."
     	],
 	  reply: [
@@ -1331,9 +1331,9 @@ function toolsRecentAll() {
 }
 
 function funcPwaApps() {
-    var rootPath = location.protocol + '//' + location.host + "/pwa/";
+    var rootPath = location.protocol + '//' + location.host + "/static/pwa/";
     var qrLink = "https://chart.googleapis.com/chart?cht=qr&chs=340x340&chl=" + rootPath+ "&choe=UTF-8";
-    var msg = "To view list of all PWA, <a href=\"/pwa/\" target=\"pwa\">click here</a>. <br>For Android/IOS devices, scan below qr code.<br><br><img src=" + qrLink + " width=\"150\" height=\"150\"></img>";
+    var msg = "To view list of all PWA, <a href=\"/static/pwa/\" target=\"pwa\">click here</a>. <br>For Android/IOS devices, scan below qr code.<br><br><img src=" + qrLink + " width=\"150\" height=\"150\"></img>";
 	  chatWindow.talk(
 	    {
 	      "funcPwaAppsRes": {

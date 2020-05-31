@@ -12,11 +12,22 @@ var testStatus=0, //0=not started, 1=download test, 2=ping+jitter test, 3=upload
 	pingStatus="", //ping in milliseconds with 2 decimal digits
 	jitterStatus="", //jitter in milliseconds with 2 decimal digits
 	clientIp=""; //client's IP address as reported by getIP.php
+//parse URL values
+var urlParams;
+var match,
+		pl     = /\+/g,  // Regex for replacing addition symbol with a space
+		search = /([^&=]+)=?([^&]*)/g,
+		decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+		query  = window.location.search.substring(1);
 
+urlParams = {};
+while (match = search.exec(query))
+   urlParams[decode(match[1])] = decode(match[2]);
+   
 //test settings. can be overridden by sending specific values with the start command
 var settings={ 
 	//ulapph
-	API_KEY: "6pt90h4f3qwcbgclwkql6vseucunzzkkg3q6g5cttjmxpce9hfvl4l2liplgly5s", //ulapph general api key
+	API_KEY: urlParams["API_KEY"], //ulapph general api key
 	time_ul:15, //duration of upload test in seconds
 	time_dl:15, //duration of download test in seconds
 	count_ping:35, //number of pings to perform in ping test

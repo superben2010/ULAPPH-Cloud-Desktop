@@ -635,7 +635,12 @@
 					var objJSON = xmlhttp.responseText;
 					//console.log(JSON.parse(objJSON));
 					//myDiagram.model = go.Model.fromJson(objJSON);
-					document.getElementById("mySavedModel").value = objJSON;
+					if(isEmpty(objJSON)) {
+						objJSON = '{ "class": "go.TreeModel",  "nodeDataArray": [{"key":1, "name":"Stella Payne Diaz", "title":"CEO", "pic":"https://images.unsplash.com/profile-1494048768229-78000599369d?dpr=1&auto=format&fit=crop&w=64&h=64&q=60&crop=faces&bg=fff"},{"key":2, "name":"Luke Warm", "title":"VP Marketing/Sales", "parent":1, "pic":"/lib/img/gojs/HSnopic.png"},{"key":3, "name":"Meg Meehan Hoffa", "title":"Sales", "parent":2, "pic":"/lib/img/gojs/HSnopic.png"},{"key":4, "name":"Peggy Flaming", "title":"VP Engineering", "parent":1, "pic":"/lib/img/gojs/HSnopic.png"},{"key":5, "name":"Saul Wellingood", "title":"Manufacturing", "parent":4, "pic":"/lib/img/gojs/HSnopic.png"},{"key":6, "name":"Al Ligori", "title":"Marketing", "parent":2, "pic":"/lib/img/gojs/HSnopic.png"},{"key":7, "name":"Dot Stubadd", "title":"Sales Rep", "parent":3, "pic":"/lib/img/gojs/HSnopic.png"},{"key":8, "name":"Les Ismore", "title":"Project Mgr", "parent":5, "pic":"/lib/img/gojs/HSnopic.png"},{"key":9, "name":"April Lynn Parris", "title":"Events Mgr", "parent":6, "pic":"/lib/img/gojs/HSnopic.png"},{"key":10, "name":"Xavier Breath", "title":"Engineering", "parent":4, "pic":"/lib/img/gojs/HSnopic.png"},{"key":11, "name":"Anita Hammer", "title":"Process", "parent":5, "pic":"/lib/img/gojs/HSnopic.png"},{"key":12, "name":"Billy Aiken", "title":"Software", "parent":10, "pic":"/lib/img/gojs/HSnopic.png"},{"key":13, "name":"Stan Wellback", "title":"Testing", "parent":10, "pic":"/lib/img/gojs/HSnopic.png"},{"key":14, "name":"Marge Innovera", "title":"Hardware", "parent":10, "pic":"/lib/img/gojs/HSnopic.png"},{"key":15, "name":"Evan Elpus", "title":"Quality", "parent":5, "pic":"/lib/img/gojs/HSnopic.png"},{"key":16, "name":"Lotta B. Essen", "title":"Sales Rep", "parent":3, "pic":"/lib/img/gojs/HSnopic.png"},{"key":17, "name":"Joaquin Closet", "title":"Wardrobe Assistant", "isAssistant":true, "parent":1, "pic":"/lib/img/gojs/HSnopic.png"},{"key":18, "name":"Hannah Twomey", "title":"Engineering Assistant", "parent":10, "isAssistant":true, "pic":"/lib/img/gojs/HSnopic.png"} ]}';
+						document.getElementById("mySavedModel").value = objJSON;
+					} else {
+						document.getElementById("mySavedModel").value = objJSON;
+					}
 					//jsonData = objJSON;
 					load();
 					//console.log(objJSON);
@@ -647,6 +652,14 @@
 		}
 		return;
 	};
+	
+	function isEmpty(obj) {
+		for(var key in obj) {
+			if(obj.hasOwnProperty(key))
+				return false;
+		}
+		return true;
+	}
 
 
 </script>

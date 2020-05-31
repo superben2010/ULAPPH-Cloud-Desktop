@@ -1,114 +1,408 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>ULAPPH PWA Apps</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-div.gallery {
-  border: 1px solid #ccc;
-}
+	<meta charset="UTF-8">
+	<title>ULAPPH Cloud Desktop</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="ULAPPH Cloud Desktop - one world, one desktop!" />
+	<style>
+	div.gallery {
+	  border: 1px solid #ccc;
+	}
 
-div.gallery:hover {
-  border: 1px solid #777;
-}
+	div.gallery:hover {
+	  border: 1px solid #777;
+	}
 
-div.gallery img {
-  width: 100%;
-  height: auto;
-}
+	div.gallery img {
+	  width: 100%;
+	  height: auto;
+	}
 
-div.desc {
-  padding: 15px;
-  text-align: center;
-}
+	div.desc {
+	  padding: 15px;
+	  text-align: center;
+	  font-size: 20px;
+	  font-weight: bold;
+	}
 
-* {
-  box-sizing: border-box;
-}
+	* {
+	  box-sizing: border-box;
+	}
 
-.responsive {
-  padding: 0 6px;
-  float: left;
-  width: 24.99999%;
-}
+	.responsive {
+	  padding: 0 6px;
+	  float: left;
+	  width: 24.99999%;
+	}
 
-@media only screen and (max-width: 700px) {
-  .responsive {
-    width: 49.99999%;
-    margin: 6px 0;
-  }
-}
+	@media only screen and (max-width: 700px) {
+	  .responsive {
+		width: 49.99999%;
+		margin: 6px 0;
+	  }
+	}
 
-@media only screen and (max-width: 500px) {
-  .responsive {
-    width: 100%;
-  }
-}
+	@media only screen and (max-width: 500px) {
+	  .responsive {
+		width: 100%;
+	  }
+	}
 
-.clearfix:after {
-  content: "";
-  display: table;
-  clear: both;
-}
-</style>
+	.clearfix:after {
+	  content: "";
+	  display: table;
+	  clear: both;
+	}
+	</style>
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-87908378-2"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-87908378-2');
+	</script>
 </head>
 <body>
 
-<h2>ULAPPH PWA Apps</h2>
-List of all installable PWA apps for your desktop & mobile devices.
-<hr>
+<h2>Hello, Welcome to Ulapph Cloud Desktop!</h2>
 
 <div class="responsive">
   <div class="gallery">
-    <a target="_blank" href="/static/pwa/pwa/index.html" title="Open ULAPPH PWA">
-      <!--img src="/static/pwa/pwa/pwa-512.png" alt="Cinque Terre" width="600" height="400"-->
-    <!--/a-->
-    <div class="desc">PWA</div>
+    <a target="_blank" href="/search" title="Search">
+    <div class="desc">Search</div>
   </div>
 </div>
 
 <div class="responsive">
   <div class="gallery">
-    <a target="_blank" href="/static/pwa/www/index.html" title="Open ULAPPH Homepage">
-      <!--img src="/static/pwa/www/www-512.png" alt="Cinque Terre" width="600" height="400"-->
-    <!--/a-->
-    <div class="desc">WWW</div>
+    <a target="_blank" href="/uwm" title="Desktop with AI">
+    <div class="desc">AI Desktop</div>
   </div>
 </div>
 
 <div class="responsive">
   <div class="gallery">
-    <a target="_blank" href="/static/pwa/uwm/uwm.html" title="Open ULAPPH Cloud Desktop">
-      <!--img src="/static/pwa/uwm/uwm-512.png" alt="Cinque Terre" width="600" height="400"-->
-    <!--/a-->
-    <div class="desc">UWM</div>
+    <a target="_blank" href="/tools?FUNC=WIDGET&t=MiniBrowserGet" title="Quick launch & Search">
+    <div class="desc">Quick Launcher</div>
   </div>
 </div>
 
 <div class="responsive">
   <div class="gallery">
-    <a target="_blank" href="/static/pwa/desktops/desktops.html" title="Open ULAPPH Desktops">
-      <!--img src="/static/pwa/desktops/desktops-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
+    <a target="_blank" href="/tools?FUNC=WIDGET&t=AnalogClockWidget" title="Clock & Cal">
+    <div class="desc">Clock & Cal</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://www.worldtimebuddy.com/" title="Time Buddy">
+    <div class="desc">Time Buddy</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://scientific-calculator.appspot.com/" title="Calculator">
+    <div class="desc">Calculator</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/tools?FUNC=WIDGET&t=MyPreferences" title="Settings">
+    <div class="desc">Settings</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://ulapph-installer.appspot.com/contents?q=home" title="Templates">
+    <div class="desc">Templates</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/admin-setup" title="Admin">
+    <div class="desc">Admin</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/editor?EDIT_FUNC=CRYPTO" title="Encryptor">
+    <div class="desc">Encryptor</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/editor?EDIT_FUNC=READER" title="Editor">
+    <div class="desc">Editor</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/tools?FUNC=WIDGET&t=HTERM" title="Terminal">
+    <div class="desc">Terminal</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/desktops" title="Open ULAPPH Desktops">
     <div class="desc">Desktops</div>
   </div>
 </div>
 
+<!--div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/static/pwa/www/index.html" title="Open ULAPPH Homepage">
+    <div class="desc">WWW</div>
+  </div>
+</div-->
+
 <div class="responsive">
   <div class="gallery">
-    <a target="_blank" href="/static/pwa/site/site.html" title="Open ULAPPH Cloud Website">
-      <!--img src="/static/pwa/site/site-512.png" alt="Cinque Terre" width="600" height="400"-->
-    <!--/a-->
+    <a target="_blank" href="/editor?EDIT_FUNC=TIMELINE&SID=GEN" title="Open ULAPPH TimelineJS">
+    <div class="desc">TimelineJS</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/tools?FUNC=MIRROR2" title="Small Camera">
+    <div class="desc">Small Camera</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/tools?FUNC=MIRROR" title="Big Camera">
+    <div class="desc">Big Camera</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://appr.tc/" title="WebRTC VideoChat">
+    <div class="desc">WebRTC VideoChat</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/editor?EDIT_FUNC=TEXT-TO-SPEECH" title="Text to Speech">
+    <div class="desc">Text to Speech</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/tools?FUNC=WIDGET&t=RandomGenerator" title="Random Generator">
+    <div class="desc">Random Generator</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://www.google.com/android/find" title="Find Android">
+    <div class="desc">Find Android</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://www.subnetmask.info/" title="Subnet Calculator">
+    <div class="desc">Subnet Calculator</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/tools?FUNC=WIDGET&t=Speedtest&API_KEY=6pt90h4f3qwcbgclwkql6vseucunzzkkg3q6g5cttjmxpce9hfvl4l1234567890" title="Speed Test">
+    <div class="desc">Speed Test</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://www.lucidchart.com/" title="Lucid Art">
+    <div class="desc">Lucid Art</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/tools?FUNC=WIDGET&t=FAM_TREE" title="Family Tree">
+    <div class="desc">Family Tree</div>
+  </div>
+</div>
+
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/mindmaps/" title="Mind Maps">
+    <div class="desc">Mind Maps</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/tree" title="UI Tree">
+    <div class="desc">UI Tree</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/orgchart" title="Org Chart">
+    <div class="desc">Org Chart</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/editor?EDIT_FUNC=MERMAID" title="Sequence Diagram">
+    <div class="desc">Sequence Diagram</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/tools?FUNC=WIDGET&t=TREE" title="Syntax Tree">
+    <div class="desc">Syntax Tree</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://ulapph-swagger.appspot.com/" title="Swagger Editor">
+    <div class="desc">Swagger Editor</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://www.mathcha.io/editor" title="Math Editor">
+    <div class="desc">Math Editor</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://stackedit.io/editor" title="Markdown Editor">
+    <div class="desc">Markdown Editor</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://bookbrowser-demo.geek1011.net/" title="Ebook Reader">
+    <div class="desc">Ebook Reader</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://zxing.appspot.com/generator/" title="QR Generator">
+    <div class="desc">QR Generator</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/static/jsbeautify/index.html" title="JS Beautifier">
+    <div class="desc">JS Beautifier</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/static/minify/index.html" title="JS Minifier">
+    <div class="desc">JS Minifier</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://keycode.info/" title="Key Codes">
+    <div class="desc">Key Codes</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/static/json2csv/index.html" title="JSON to CSV">
+    <div class="desc">JSON to CSV</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/static/csv2json/index.html" title="CSV to JSON">
+    <div class="desc">CSV to JSON</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://validator.w3.org/" title="Markup Validator">
+    <div class="desc">Markup Validator</div>
+  </div>
+</div>
+
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/jwtdebugger/" title="JWT Debugger">
+    <div class="desc">JWT Debugger</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://play.golang.org/" title="Go Playground">
+    <div class="desc">Go Playground</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/infodb?DB_FUNC=SLIDES&CATEGORY=desktop0&VIEW=RECENT" title="Slides Recent">
+    <div class="desc">Slides Recent</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/infodb?DB_FUNC=ARTICLES&CATEGORY=desktop0&VIEW=RECENT" title="Articles Recent">
+    <div class="desc">Articles Recent</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/infodb?DB_FUNC=MEDIA&CATEGORY=ALL_RECENT" title="Media Recent">
+    <div class="desc">Media Recent</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/contents?q=home" title="Open ULAPPH Cloud Website">
     <div class="desc">Website</div>
   </div>
 </div>
 
 <div class="responsive">
   <div class="gallery">
-    <a target="_blank" href="/chat-bubble/ulapphbot.html" title="Open ULAPPH Bot">
-      <!--img src="/chat-bubble/bot-512.png" alt="Forest" width="600" height="400"-->
-    <!--/a-->
+    <a target="_blank" href="/static/chat-bubble/ulapphbot.html" title="Open ULAPPH Bot">
     <div class="desc">Chatbot</div>
   </div>
 </div>
@@ -116,8 +410,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/cctv/index.html" title="Open ULAPPH CCTV">
-      <!--img src="/static/pwa/cctv/cctv-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">CCTV</div>
   </div>
 </div>
@@ -125,8 +417,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/doctor/doctor.html" title="Open ULAPPH Doctor">
-      <!--img src="/static/pwa/doctor/doctor-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Doctor</div>
   </div>
 </div>
@@ -134,8 +424,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/music/music.html" title="Open ULAPPH Music Player">
-      <!--img src="/static/pwa/music/music-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Music</div>
   </div>
 </div>
@@ -143,35 +431,27 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/video/video.html" title="Open ULAPPH Video Player">
-      <!--img src="/static/pwa/video/video-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Video</div>
   </div>
 </div>
 
 <div class="responsive">
   <div class="gallery">
+    <a target="_blank" href="/media?FUNC_CODE=YVP" title="Open Custom Youtube Player">
+    <div class="desc">Custom Youtube</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
     <a target="_blank" href="/static/pwa/guestbook/guestbook.html" title="Open ULAPPH Guestbook">
-      <!--img src="/static/pwa/guestbook/guestbook-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Guestbook</div>
   </div>
 </div>
 
 <div class="responsive">
   <div class="gallery">
-    <a target="_blank" href="/static/pwa/timelinejs/timelinejs.html" title="Open ULAPPH TimelineJS">
-      <!--img src="/static/pwa/timelinejs/timelinejs-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
-    <div class="desc">TimelineJS</div>
-  </div>
-</div>
-
-<div class="responsive">
-  <div class="gallery">
     <a target="_blank" href="/static/pwa/uploader/uploader.html" title="Open ULAPPH Uploader">
-      <!--img src="/static/pwa/uploader/uploader-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Uploader</div>
   </div>
 </div>
@@ -179,8 +459,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/todo/todo.html" title="Open ULAPPH Todos">
-      <!--img src="/static/pwa/todo/todo-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Todo</div>
   </div>
 </div>
@@ -188,8 +466,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/search/search.html" title="Open ULAPPH Search">
-      <!--img src="/static/pwa/search/search-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Search</div>
   </div>
 </div>
@@ -197,8 +473,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/stream/stream.html" title="Open ULAPPH Stream">
-      <!--img src="/static/pwa/stream/stream-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Stream</div>
   </div>
 </div>
@@ -206,8 +480,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/chat/chat.html" title="Open ULAPPH Chat">
-      <!--img src="/static/pwa/chat/chat-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Chat</div>
   </div>
 </div>
@@ -215,8 +487,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/broadcast/broadcast.html" title="Open ULAPPH Broadcast">
-      <!--img src="/static/pwa/broadcast/broadcast-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Broadcast</div>
   </div>
 </div>
@@ -224,8 +494,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/social/social.html" title="Open ULAPPH Social">
-      <!--img src="/static/pwa/social/social-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Social</div>
   </div>
 </div>
@@ -233,8 +501,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/qrscan/qrscan.html" title="Open ULAPPH QR Scanner">
-      <!--img src="/static/pwa/qrscan/qrscan-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">QR Scan</div>
   </div>
 </div>
@@ -242,8 +508,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/remote/remote.html" title="Open ULAPPH Remote Control">
-      <!--img src="/static/pwa/remote/remote-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Remote Control</div>
   </div>
 </div>
@@ -251,8 +515,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/maps/maps.html" title="Open ULAPPH Maps">
-      <!--img src="/static/pwa/maps/maps-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Online Maps</div>
   </div>
 </div>
@@ -260,8 +522,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/tracker/tracker.html" title="Open ULAPPH Tracker">
-      <!--img src="/static/pwa/tracker/tracker-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Realtime Tracker</div>
   </div>
 </div>
@@ -269,8 +529,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/news/news.html" title="Open News Monitor">
-      <!--img src="/static/pwa/news/news-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">News Monitor</div>
   </div>
 </div>
@@ -278,8 +536,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/ls/ls.html" title="Open Local Storage">
-      <!--img src="/static/pwa/ls/ls-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Local Storage</div>
   </div>
 </div>
@@ -287,8 +543,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/games/games.html" title="Open Games">
-      <!--img src="/static/pwa/games/games-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Games</div>
   </div>
 </div>
@@ -296,8 +550,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/recipes/recipes.html" title="Open Recipes">
-      <!--img src="/static/pwa/recipes/recipes-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Recipes</div>
   </div>
 </div>
@@ -305,8 +557,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/exercise/exercise.html" title="Open Exercise">
-      <!--img src="/static/pwa/exercise/exercise-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Exercise</div>
   </div>
 </div>
@@ -314,8 +564,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/recent/recent.html" title="Open Recent">
-      <!--img src="/static/pwa/recent/recent-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Recent</div>
   </div>
 </div>
@@ -323,8 +571,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/textformat/textformat.html" title="Text Format">
-      <!--img src="/static/pwa/textformat/textformat-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">TextFormat</div>
   </div>
 </div>
@@ -332,8 +578,6 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/countdown/countdown.html" title="Countdown">
-      <!--img src="/static/pwa/countdown/countdown-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Countdown</div>
   </div>
 </div>
@@ -341,20 +585,33 @@ List of all installable PWA apps for your desktop & mobile devices.
 <div class="responsive">
   <div class="gallery">
     <a target="_blank" href="/static/pwa/motion/motion.html" title="Motion">
-      <!--img src="/static/pwa/motion/motion-512.png" alt="Mountains" width="600" height="400"-->
-    <!--/a-->
     <div class="desc">Motion Alarm</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="https://ulapph-cloud-desktop-em-garvbqo2bq-uc.a.run.app/" title="Expense Manager">
+    <div class="desc">Expense Manager</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/static/pwa/pwa/index.html" title="Open ULAPPH PWA">
+    <div class="desc">PWA</div>
+  </div>
+</div>
+
+<div class="responsive">
+  <div class="gallery">
+    <a target="_blank" href="/logout" title="Logout">
+    <div class="desc">Logout</div>
   </div>
 </div>
 
 </a>
 
 <div class="clearfix"></div>
-
-<div style="padding:6px;">
-  <p>NOTE: To install these apps, when you are prompted to "Add to Home Screen", please click & follow instructions.</p>
-  <p>You can then access these apps from the mobile home screen by clicking on the icons in your mobile phone.</p>
-</div>
-
 </body>
 </html>

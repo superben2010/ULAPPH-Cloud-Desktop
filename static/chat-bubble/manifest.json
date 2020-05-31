@@ -16,5 +16,5 @@
 "theme_color": "#50d29d",
 "background_color": "#50d29d",
 "display": "standalone",
-"start_url": "/chat-bubble/ulapphbot.html"
+"start_url": "/static/chat-bubble/ulapphbot.html"
 }
