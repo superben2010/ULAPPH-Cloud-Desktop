@@ -1,5 +1,7 @@
 **ULAPPH Cloud Desktop** is an open-source webtop or web-based desktop written in Golang which can be installed in your local laptop, cloud server, docker container, Kubernetes, serverless like Cloud Run or even Android via Termux! It is an AI-powered and full-featured frontend and backend architecture aimed to provide users with rich experience to increase productivity and provide common user experience.
 
+![ULAPPH Cloud Desktop](https://storage.googleapis.com/ulapph-demo.appspot.com/public/ULAPPH%20-%20Barbecue%20Version.PNG "ULAPPH Architecture")
+
 Too Long; Dont Read (TL;DR)
 ----------------
 - Here is the demo version at https://www.ulapph.com Or you can first watch the latest demo video here https://www.youtube.com/channel/UCfmBlIM8pbOs3Vaq1lTZ22Q
@@ -13,12 +15,12 @@ Versions
 - Version 2020: "Afridata" - Dockerized, Platform-agnostic version with AI using IBM Watson
 - Version 2021: *Version not released due to COVID-19 Pandemic*
 - Version 2022: "Barbecue" - Added more AI use cases and improved productivity features:
-							- Default & Custom Search Engines
-							- Multiple desktop support
-							- Programmable Javascript startup
-							- Chat with AI...
-							- Desktop News Reader
-							- Sticky Notes Per Desktop
+                            - Default & Custom Search Engines
+                            - Multiple desktop support
+                            - Programmable Javascript startup
+                            - Chat with AI...
+                            - Desktop News Reader
+                            - Sticky Notes Per Desktop
 
 Watch Demo Videos in Youtube!
 -----------
@@ -47,88 +49,88 @@ Libraries/Packages Used
 ----------------
 
     import (
-    	"net"
-    	"html/template"
-    	"net/http"
-    	"path"
-    	"path/filepath"
-    	"encoding/base64"
-    	"encoding/json"
-    	"net/url"
-    	"math/rand"
-    	"regexp"
-    	"unicode"
-    	"unicode/utf8"
-    	"time"
-    	"bytes"
-    	"fmt"
-    	"strings"
-    	"strconv"
-    	"bufio"
-    	"io/ioutil"
-    	"io"
-    	"log"
-    	"errors"
+        "net"
+        "html/template"
+        "net/http"
+        "path"
+        "path/filepath"
+        "encoding/base64"
+        "encoding/json"
+        "net/url"
+        "math/rand"
+        "regexp"
+        "unicode"
+        "unicode/utf8"
+        "time"
+        "bytes"
+        "fmt"
+        "strings"
+        "strconv"
+        "bufio"
+        "io/ioutil"
+        "io"
+        "log"
+        "errors"
         "cloud.google.com/go/datastore"
         mailjet "github.com/mailjet/mailjet-apiv3-go"
-    	"google.golang.org/appengine/search"
+        "google.golang.org/appengine/search"
         "google.golang.org/appengine/runtime"
         "cloud.google.com/go/storage"
-    	"github.com/edwindvinas/user_agent"
-    	"github.com/edwindvinas/go-humanize"
-    	"github.com/edwindvinas/html"
-    	"google.golang.org/api/googleapi/transport"
-    	"flag"
-    	"google.golang.org/api/youtube/v3"
-    	"golang.org/x/net/context"
-    	"crypto/aes"
-    	"crypto/cipher"
-    	crand "crypto/rand"
-    	"mime/multipart"
-    	"github.com/edwindvinas/html2text"
-    	"github.com/edwindvinas/percent"
-    	"github.com/edwindvinas/jsonq"
-    	"sort"
-    	"github.com/edwindvinas/firego.v1"
-    	"golang.org/x/oauth2/google"
-    	"crypto/rsa"
+        "github.com/edwindvinas/user_agent"
+        "github.com/edwindvinas/go-humanize"
+        "github.com/edwindvinas/html"
+        "google.golang.org/api/googleapi/transport"
+        "flag"
+        "google.golang.org/api/youtube/v3"
+        "golang.org/x/net/context"
+        "crypto/aes"
+        "crypto/cipher"
+        crand "crypto/rand"
+        "mime/multipart"
+        "github.com/edwindvinas/html2text"
+        "github.com/edwindvinas/percent"
+        "github.com/edwindvinas/jsonq"
+        "sort"
+        "github.com/edwindvinas/firego.v1"
+        "golang.org/x/oauth2/google"
+        "crypto/rsa"
         "github.com/edwindvinas/jwt-go"
         "github.com/edwindvinas/goquery"
-    	"github.com/edwindvinas/sentences.v1/english"
-    	"golang.org/x/oauth2"
-    	"github.com/google/go-github/github"
-    	"github.com/edwindvinas/bleve"
-    	"github.com/edwindvinas/sprig"
-    	"encoding/binary"
-    	"os"
-    	"github.com/edwindvinas/sillyname-go"
-    	"github.com/edwindvinas/otto"
-    	"github.com/edwindvinas/xlsx"
-    	"reflect"
-    	"github.com/edwindvinas/nlp"
-    	"github.com/edwindvinas/goml/text"
-    	"github.com/edwindvinas/perceptive"
-    	"image"
-    	"github.com/edwindvinas/prose.v2"
-    	"github.com/edwindvinas/closestmatch"
+        "github.com/edwindvinas/sentences.v1/english"
+        "golang.org/x/oauth2"
+        "github.com/google/go-github/github"
+        "github.com/edwindvinas/bleve"
+        "github.com/edwindvinas/sprig"
+        "encoding/binary"
+        "os"
+        "github.com/edwindvinas/sillyname-go"
+        "github.com/edwindvinas/otto"
+        "github.com/edwindvinas/xlsx"
+        "reflect"
+        "github.com/edwindvinas/nlp"
+        "github.com/edwindvinas/goml/text"
+        "github.com/edwindvinas/perceptive"
+        "image"
+        "github.com/edwindvinas/prose.v2"
+        "github.com/edwindvinas/closestmatch"
         "github.com/edwindvinas/xurls"
         "cloud.google.com/go/compute/metadata"
         "github.com/satori/go.uuid"
         "github.com/patrickmn/go-cache"
         cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
         taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
-    	"github.com/IBM/go-sdk-core/core"
+        "github.com/IBM/go-sdk-core/core"
         "github.com/watson-developer-cloud/go-sdk/assistantv2"
         "github.com/edwindvinas/openweathermap"
-    	"github.com/edwindvinas/ytdl"
+        "github.com/edwindvinas/ytdl"
         "google.golang.org/api/iterator"
         "github.com/tdewolff/minify/v2"
-    	"github.com/tdewolff/minify/v2/css"
-    	mhtml "github.com/tdewolff/minify/v2/html"
-    	"github.com/tdewolff/minify/v2/js"
-    	mjson "github.com/tdewolff/minify/v2/json"
-    	"github.com/tdewolff/minify/v2/svg"
-    	"github.com/tdewolff/minify/v2/xml"
+        "github.com/tdewolff/minify/v2/css"
+        mhtml "github.com/tdewolff/minify/v2/html"
+        "github.com/tdewolff/minify/v2/js"
+        mjson "github.com/tdewolff/minify/v2/json"
+        "github.com/tdewolff/minify/v2/svg"
+        "github.com/tdewolff/minify/v2/xml"
         "github.com/boltdb/bolt"
         "github.com/go-redis/redis/v7"
     )
@@ -180,8 +182,8 @@ ERRORS
 1) ERROR: createHTTPTask: cloudtasks.CreateTask: rpc error: code = PermissionDenied desc = Cloud Tasks API has not been used in project 255989709567 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudtasks.googleapis.com/overview?project=255989709567 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
 - Just enable the CloudTask API
 - Also create a queue
-	gcloud tasks queues create [QUEUE_ID]
-	gcloud tasks queues create ulapph
+    gcloud tasks queues create [QUEUE_ID]
+    gcloud tasks queues create ulapph
 2) Upload the AI files
 
 
