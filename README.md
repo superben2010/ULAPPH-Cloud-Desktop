@@ -4,8 +4,12 @@
 
 Too Long; Dont Read (TL;DR)
 ----------------
-- Here is the demo version at https://www.ulapph.com Or you can first watch the latest demo video here https://www.youtube.com/channel/UCfmBlIM8pbOs3Vaq1lTZ22Q
--  ULAPPH is personally developed using Go or Golang programming language.
+- Watch the latest demo video here https://www.youtube.com/channel/UCfmBlIM8pbOs3Vaq1lTZ22Q
+- If given access, you can try the latest version at https://www.ulapph.com
+- But for now, the live demo version is not accessible to the public due to cloud usage cost.
+- ULAPPH is personally developed using Go or Golang programming language.
+- ULAPPH is not a commercial product hence the demo site is not available publicly.
+- ULAPPH is simply a product of my hobby with a goal to become productive and learn Golang!
 - It's been tried to run as standalone server inside Docker Desktop, Android Termux, Linux machine, Windows 10 machine or in Google Appegine Standard or in Google Cloud Run or Kubernetes as a docker container in any cloud provider.
 
 Versions
