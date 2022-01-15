@@ -116,7 +116,8 @@ $(function() {
 					localStorage[root+"login"+UID] = "ok";
 					var URL = document.getElementById("continue").value;
 					if (URL == "/") {
-						window.location.href  = root+"/uwm?UID="+UID;
+						//window.location.href  = root+"/uwm?UID="+UID;
+						window.location.href  = root+"/static/pwa/?UID="+UID;
 						return;
 					}
 					var n = URL.indexOf("?");

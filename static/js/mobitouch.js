@@ -33,7 +33,6 @@ var click = function(e) {
 
 var start = function(e) {
     //console.log(e);
-	
     if (e.type === "click" && e.button !== 0) {
         return;
     }
@@ -43,73 +42,17 @@ var start = function(e) {
     this.classList.add("longpress");
     
     presstimer = setTimeout(function() {
-        //alert("long click");
-		addEventListeners();
+        //console.log("long click");
 		//launchAS();
         longpress = true;
+		addEventListeners();
     }, 1000);
-    
+	
     return false;
 };
 
 function launchAS() {
-	
-/* 	var isMobile = document.getElementById("isMobile").value;
-	var jswmstr = "";
-	if (isMobile == "true" || isMobile == true) {
-		jswmstr = "'" + "/tools?FUNC=WIDGET&t=MiniBrowserGet" + "', 500, 300, 'middle', 'middle', {title: '" + "Mini Browser" + "', icon: '/static/img/jswm-web.png'}";
-	} else {
-		//jswmstr = "'" + "/tools?FUNC=MIRROR2" + "', 500, 300, 'middle', 'middle', {title: '" + "Mirror" + "', icon: '/static/img/jswm-web.png'}";
-		jswmstr = "'" + "/tools?FUNC=ALL_DESKTOPS" + "', 500, 300, 'middle', 'middle', {title: '" + "All Desktops" + "', icon: '/static/img/jswm-web.png'}";
-	} */
-/* 	var jswmstr = "'" + "/tools?FUNC=ALL_DESKTOPS" + "', 500, 300, 'middle', 'middle', {title: '" + "All Desktops" + "', icon: '/static/img/jswm-web.png'}";
-	eval('windowManager.openURI(' + jswmstr + ');'); */
-
-	//var tdesk = prompt("Please enter desktop name", "TempDesktop");
-	//if (tdesk != null) {
-	//window.open("/uwm?u=" + tdesk, "_blank");
-	//window.open("/chat-bubble/ulapphbot.html", "_blank");
-    /*
-	var url = "";
-	var aUser = document.getElementById("aUser").value;
-	var sa = aUser.indexOf("---");
-	var UID = "";
-	if (sa > 0) {
-		var SPS = aUser.split("---");
-		UID = SPS[0];
-	} else {
-		UID = aUser;
-	}
-	if (urlParams["u"] != "") {
-		url = "/chat-bubble/ulapphbot.html"+"?u="+urlParams["u"] +"&UID="+UID;
-	} else {
-		url = "/chat-bubble/ulapphbot.html"+"?UID="+UID;
-	}
-	window.open(url, "_blank");
-    */
-	/*var jswmstr = "'" + "/uwm?u=" + tdesk + "', 500, 300, 'middle', 'middle', {title: '" + "Mirror" + "', icon: '/static/img/jswm-web.png'}";
-	eval('windowManager.openURI(' + jswmstr + ');');
-	
-	var aSound = document.createElement('audio');
-	soundManager.createSound({
-		id: 'waterMob',
-		volume: 75,
-		url: root + "/static/audio/water-drop.ogg"
-	});
-	playSound('waterMob');*/
-	//} else {
-	//	alert("Please enter desktop name");
-	//}
-    if (localStorage[root+'isStreaming'] == 'Y') {
-	    localStorage[root+'isStreaming'] = 'N';
-        alertify.success("Streaming has been turned off!");
-        //return wallpaper
-        //src = "/static/img/LP_DeepField_NASA.gif";
-        //document.getElementById('page').style.backgroundImage = "url(" + src + ")";
-    } else {
-        localStorage[root+'isStreaming'] = 'Y';
-        alertify.success("Streaming has been turned on!");
-    }
+	console.log("launchAS()");
 };
 
 node.addEventListener("mousedown", start);
@@ -153,21 +96,51 @@ function handleTouchMove(evt) {
         if ( xDiff > 0 ) {
             /* left swipe */ 
 			//alertify.log("Swiped left...");
-			scanCctvStream("L");
+			//scanCctvStream("L");
+            if (localStorage[root+"news"] == "on") {
+                stopTalking();
+                funcshow();
+            } else if (localStorage[root+'isStreaming'] == 'Y') {
+                scanCctvStream("L");
+            } else {
+                nextWp();
+            }
         } else {
             /* right swipe */
-			scanCctvStream("R");
+			//scanCctvStream("R");
 			//alertify.log("Swiped right...");
+            if (localStorage[root+"news"] == "on") {
+                stopTalking();
+                funcshow();
+            } else if (localStorage[root+'isStreaming'] == 'Y') {
+                scanCctvStream("R");
+            } else {
+                nextWp();
+            }
         }                       
     } else {
         if ( yDiff > 0 ) {
             /* up swipe */ 
-			scanCctvStream("C");
+			//scanCctvStream("C");
 			//alertify.log("Swiped up...");
+            if (localStorage[root+"news"] == "on") {
+                selectRandomDesktop();
+            } else if (localStorage[root+'isStreaming'] == 'Y') {
+                scanCctvStream("C");
+            } else {
+                nextWp();
+            }
         } else { 
             /* down swipe */
-			scanCctvStream("O");
+			//scanCctvStream("O");
 			//alertify.log("Swiped down...");
+            if (localStorage[root+"news"] == "on") {
+                selectRandomDesktop();
+            } else if (localStorage[root+'isStreaming'] == 'Y') {
+                scanCctvStream("O");
+            } else {
+                nextWp();
+            }
         }                                                                 
     }
     /* reset values */

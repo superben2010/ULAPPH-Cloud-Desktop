@@ -10,11 +10,11 @@
 						</li>
 						<li class="divider"></li>
 						<li>
-							<a href="#page" onmouseenter="playAudio();" onclick="window.open('https://mail.google.com/mail/u/0/h/', 'Gmail Mobile' ); return false">Google Gmail(M)</a>
+							<a href="#page" onmouseenter="playAudio();" onclick="window.open('https://mail.google.com/mail/u/0/h/', 'Gmail Mobile' ); return false">Gmail-Send Email(M)</a>
 						</li>
 						<li class="divider"></li>
 						<li>
-							<a href="#page" onmouseenter="playAudio();" onclick="window.open('https://gmail.google.com/','_blank'); return false">Google Gmail(F) </a>
+							<a href="#page" onmouseenter="playAudio();" onclick="window.open('https://gmail.google.com/','_blank'); return false">Gmail-Send Email(F)</a>
 						</li>
 						<li class="divider"></li>
 						<li>

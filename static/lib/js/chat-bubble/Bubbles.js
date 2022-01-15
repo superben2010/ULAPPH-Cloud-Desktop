@@ -77,6 +77,7 @@ function Bubbles(container, self, options) {
     inputWrap.className = "input-wrap"
     var inputText = document.createElement("textarea")
     inputText.setAttribute("placeholder", "Ask me anything...")
+	//inputText.id = "chatInput";
     inputWrap.appendChild(inputText)
     inputText.addEventListener("keypress", function(e) {
       // register user input

@@ -514,7 +514,7 @@ input[type=password]:focus ~ .tooltip-pass {
  height:21px;
 }
 #head nav#menu ul li.apple a {
- background:url(/img/favicon.ico) no-repeat 10px 1px;                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+ background:url(/static/img/favicon.ico) no-repeat 10px 1px;                                                                                                                                                                                                                                                                                                                                                                                                                                                          
     display: block;
     position: relative;
     text-indent: -9999px;

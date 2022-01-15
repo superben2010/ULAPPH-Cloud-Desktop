@@ -8,7 +8,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- pwa manifest -->
-    <link rel="manifest" href="/static/pwa/cctv/manifest.json?v=1">
+    <link rel="manifest" href="/static/pwa/cctv/manifest.json">
 
     <!--alertify-->
     <script type="text/javascript" src="/static/js/jquery-1.7.1.min.js"></script>
@@ -213,8 +213,14 @@ var convo = {
 	      question: "Capture CCTVs",
 	      answer: "funcCaptureCCTV"
 	    },{
+	      question: "Battery Status",
+	      answer: "funcBatteryStatus"
+	    },{
             question: "Review CCTVs",
             answer: "funcReviewCCTV"
+        },{
+            question: "List Cameras",
+            answer: "funcListCamsCCTV"
         }
 	  ]
   },
@@ -285,9 +291,15 @@ funcShowCCTV = function () {
 							  question: "Capture CCTVs",
 							  answer: "funcCaptureCCTV"
 						    },{
+							  question: "Battery Status",
+							  answer: "funcBatteryStatus"
+							},{
                                 question: "Review CCTVs",
                                 answer: "funcReviewCCTV"
-                            }]
+                            },{
+								question: "List Cameras",
+								answer: "funcListCamsCCTV"
+							}]
 					  }
 					},
 					"cctv-cameras"
@@ -297,7 +309,60 @@ funcShowCCTV = function () {
 		}
 	  }
 }
-
+funcBatteryStatus = function () {
+	//capturing cctv battery
+    if (window.XMLHttpRequest)
+	  {// code for IE7+, Firefox, Chrome, Opera, Safari
+	  xhr5=new XMLHttpRequest();
+	  }
+	else
+	  {// code for IE6, IE5
+	  xhr5=new ActiveXObject('MSXML2.XMLHTTP.3.0');
+	  } 
+	console.log("Capturing cctv batteries...");
+	xhr5.open("GET","/directory?DIR_FUNC=cctv-battery"); 
+	xhr5.send();
+	
+	 xhr5.onreadystatechange=function(convo)
+	  {
+	  if (xhr5.readyState==4 && xhr5.status==200)
+		{
+            var currVal1 = xhr5.responseText;
+            console.log(currVal1);
+			var currTimestamp = new Date().toLocaleString();
+			if (currVal1 != "") {
+				chatWindow.talk(
+					{
+					"cctv-cameras": {
+						says: [currVal1, currTimestamp],
+							reply: [{
+									question: "New CCTV",
+									answer: "funcNewCCTV"
+								},{
+									question: "Latest CCTVs",
+									answer: "funcShowCCTV"
+								},{
+									question: "Capture CCTVs",
+									answer: "funcCaptureCCTV"
+								},{
+								  question: "Battery Status",
+								  answer: "funcBatteryStatus"
+								},{
+									question: "Review CCTVs",
+									answer: "funcReviewCCTV"
+								},{
+									question: "List Cameras",
+									answer: "funcListCamsCCTV"
+								}]
+						}
+					},
+					"cctv-cameras"
+				)
+			}
+            return;
+		}
+	}
+}
 funcCaptureCCTV = function () {
 	//capturing cctv function
     if (window.XMLHttpRequest)
@@ -328,24 +393,31 @@ funcCaptureCCTV = function () {
                 {
                 var currVal = xhr5.responseText;
                     console.log(currVal);
+					var currTimestamp = new Date().toLocaleString();
                     if (currVal != "") {
                         chatWindow.talk(
                             {
                             "cctv-cameras": {
-                                says: [currVal1, currVal],
+                                says: [currTimestamp, currVal1, currVal, currTimestamp],
                                     reply: [{
-                                        question: "New CCTV",
-                                        answer: "funcNewCCTV"
+											question: "New CCTV",
+											answer: "funcNewCCTV"
                                         },{
-                                        question: "Latest CCTVs",
-                                        answer: "funcShowCCTV"
+											question: "Latest CCTVs",
+											answer: "funcShowCCTV"
                                         },{
-                                        question: "Capture CCTVs",
-                                        answer: "funcCaptureCCTV"
+											question: "Capture CCTVs",
+											answer: "funcCaptureCCTV"
                                         },{
+										  question: "Battery Status",
+										  answer: "funcBatteryStatus"
+										},{
                                             question: "Review CCTVs",
                                             answer: "funcReviewCCTV"
-                                        }]
+                                        },{
+											question: "List Cameras",
+											answer: "funcListCamsCCTV"
+										}]
                                 }
                             },
                             "cctv-cameras"
@@ -374,9 +446,15 @@ funcReviewCCTV = function () {
                 question: "Capture CCTVs",
                 answer: "funcCaptureCCTV"
             },{
+			  question: "Battery Status",
+			  answer: "funcBatteryStatus"
+			},{
                 question: "Review CCTVs",
                 answer: "funcReviewCCTV"
-            }]
+            },{
+				question: "List Cameras",
+				answer: "funcListCamsCCTV"
+			}]
         }
     },
     "cctv-cameras"
@@ -793,9 +871,15 @@ funcCallCCTV = function () {
 							  question: "Capture CCTVs",
 							  answer: "funcCaptureCCTV"
 						    },{
+							  question: "Battery Status",
+							  answer: "funcBatteryStatus"
+							},{
                                 question: "Review CCTVs",
                                 answer: "funcReviewCCTV"
-                            }]
+                            },{
+								question: "List Cameras",
+								answer: "funcListCamsCCTV"
+							}]
 					  }
 					},
 					"cctv-cameras"
@@ -841,9 +925,15 @@ funcAlarmCCTV = function () {
 							  question: "Capture CCTVs",
 							  answer: "funcCaptureCCTV"
 						    },{
+							  question: "Battery Status",
+							  answer: "funcBatteryStatus"
+							},{
                                 question: "Review CCTVs",
                                 answer: "funcReviewCCTV"
-                            }]
+                            },{
+								question: "List Cameras",
+								answer: "funcListCamsCCTV"
+							}]
 					  }
 					},
 					"cctv-cameras"
@@ -859,7 +949,7 @@ funcNewCCTV = function () {
     var qrLink = "https://chart.googleapis.com/chart?cht=qr&chs=340x340&chl=" + rootPath+ "&choe=UTF-8";
     var qrm = "For Android/IOS devices, scan below qr code.<br><br><img src=" + qrLink + " width=\"150\" height=\"150\"></img>";
     var ustr = makeid();
-    var msg = "<a href=\"/tools?FUNC=MIRROR2&v=" + ustr +"\" target=\"smallCCTV\">Small CCTV Camera</a><br><a href=\"/tools?FUNC=MIRROR&v=" + ustr + "\" target=\"bigCCTV\">Big CCTV Camera</a>" + "<br>" + qrm;
+    var msg = "<a href=\"/tools?FUNC=MIRROR3&v=" + ustr +"\" target=\"quickCCTV\">Quick CCTV Camera</a><br><a href=\"/tools?FUNC=MIRROR&v=" + ustr +"\" target=\"smallCCTV\">Small CCTV Camera</a><br><a href=\"/tools?FUNC=MIRROR&v=" + ustr + "\" target=\"bigCCTV\">Big CCTV Camera</a>" + "<br>" + qrm;
 	  chatWindow.talk(
 	    {
 	      "funcToolsCctvRes": {
@@ -874,37 +964,103 @@ funcNewCCTV = function () {
                         question: "Capture CCTVs",
                         answer: "funcCaptureCCTV"
                     },{
+					  question: "Battery Status",
+					  answer: "funcBatteryStatus"
+					},{
                         question: "Review CCTVs",
                         answer: "funcReviewCCTV"
-                    }]
+                    },{
+						question: "List Cameras",
+						answer: "funcListCamsCCTV"
+					}]
 	      }
 	    },
 	    "funcToolsCctvRes"
 	  )
 }
 
+funcListCamsCCTV = function () {
+	//call cctv function
+    if (window.XMLHttpRequest)
+	  {// code for IE7+, Firefox, Chrome, Opera, Safari
+	  xhr5a=new XMLHttpRequest();
+	  }
+	else
+	  {// code for IE6, IE5
+	  xhr5a=new ActiveXObject('MSXML2.XMLHTTP.3.0');
+	  } 
+	console.log("Showing cctv cameras...");
+	xhr5a.open("GET","/directory?DIR_FUNC=cctv-recent"); 
+	xhr5a.send();
+	
+	 xhr5a.onreadystatechange=function(convo)
+	  {
+	  if (xhr5a.readyState==4 && xhr5a.status==200)
+		{
+		var currVal = xhr5a.responseText;
+			console.log(currVal);
+			  if (currVal != "") {
+				  chatWindow.talk(
+					{
+					  "cctv-cameras": {
+					  says: [currVal],
+						reply: [{
+                            question: "New CCTV",
+                            answer: "funcNewCCTV"
+                            },{
+						      question: "Latest CCTVs",
+						      answer: "funcShowCCTV"
+						    },{
+							  question: "Capture CCTVs",
+							  answer: "funcCaptureCCTV"
+						    },{
+							  question: "Battery Status",
+							  answer: "funcBatteryStatus"
+							},{
+                                question: "Review CCTVs",
+                                answer: "funcReviewCCTV"
+                            },{
+								question: "List Cameras",
+								answer: "funcListCamsCCTV"
+							}]
+					  }
+					},
+					"cctv-cameras"
+				)
+			}
+			return;
+		}
+	  }
+}
+
 funcCCTVtoolsGuide = function () {
-    var msg = "To add a new camera setup, you can edit your desktop categories first. You can then get there the desktop number and desktop name which you will enter in the CCTV camera page. In the \"New CCTV\" page, you need to enter the valid user registered in the ULAPPH Cloud Desktop server. You can select the desired buttons to start capturing CCTV. You can install the CCTV mobile app to easily review your CCTVs.";
+    var msg = "Welcome to ULAPPH CCTV app! You can see the latest CCTV images or you can initiate capture of latest image.";
 	  chatWindow.talk(
 	    {
 	      "funcCCTVtoolsGuideRes": {
 	        says: [msg],
 	        reply: [{
-            question: "User Guide",
-            answer: "funcCCTVtoolsGuide"
+				question: "User Guide",
+				answer: "funcCCTVtoolsGuide"
             },{
-            question: "New CCTV",
-            answer: "funcNewCCTV"
+				question: "New CCTV",
+				answer: "funcNewCCTV"
             },{
-            question: "Latest CCTVs",
-            answer: "funcShowCCTV"
+				question: "Latest CCTVs",
+				answer: "funcShowCCTV"
             },{
-            question: "Capture CCTVs",
-            answer: "funcCaptureCCTV"
+				question: "Capture CCTVs",
+				answer: "funcCaptureCCTV"
             },{
+			  question: "Battery Status",
+			  answer: "funcBatteryStatus"
+			},{
                 question: "Review CCTVs",
                 answer: "funcReviewCCTV"
-            }]
+            },{
+				question: "List Cameras",
+				answer: "funcListCamsCCTV"
+			}]
 	      }
 	    },
 	    "funcCCTVtoolsGuideRes"
@@ -928,9 +1084,15 @@ funcToolsCamera = function () {
                     question: "Capture CCTVs",
                     answer: "funcCaptureCCTV"
                 },{
+				  question: "Battery Status",
+				  answer: "funcBatteryStatus"
+				},{
                     question: "Review CCTVs",
                     answer: "funcReviewCCTV"
-                }]
+                },{
+					question: "List Cameras",
+					answer: "funcListCamsCCTV"
+				}]
 	      }
 	    },
 	    "funcToolsCameraRes"
@@ -972,9 +1134,15 @@ function alarmSet(statVal) {
 							  question: "Capture CCTVs",
 							  answer: "funcCaptureCCTV"
 						    },{
+							  question: "Battery Status",
+							  answer: "funcBatteryStatus"
+							},{
                                 question: "Review CCTVs",
                                 answer: "funcReviewCCTV"
-                            }]
+                            },{
+								question: "List Cameras",
+								answer: "funcListCamsCCTV"
+							}]
 					  }
 					},
 					"cctv-cameras"
@@ -1000,9 +1168,15 @@ function funcShowMainMenu() {
                 question: "Capture CCTVs",
                 answer: "funcCaptureCCTV"
             },{
+			  question: "Battery Status",
+			  answer: "funcBatteryStatus"
+			},{
                 question: "Review CCTVs",
                 answer: "funcReviewCCTV"
-            }]
+            },{
+				question: "List Cameras",
+				answer: "funcListCamsCCTV"
+			}]
         }
     },
     "cctv-cameras"

@@ -30,7 +30,13 @@
 		alertify.set({ delay: 5000 });
 		//alertify.log("<b>" + n.value + " (" + d.value + ")" + " - " + l.hostname + "</b>");
 		soundDesktop();
+		var thisMsg = "You are in desktop" + document.getElementById("locNum").innerHTML + "-" + document.getElementById("locNum").title;
+		speakMessage(thisMsg);
+		console.log("Activated desktop: "+d.value);
+		localStorage['mylocation-notes'] = document.getElementById("notesrc").value;
+		console.log("Activated notesrc: "+document.getElementById("notesrc").value);
 		alertify.log("<h3>" + n.value + " (" + d.value + ")" + " - " + l.hostname + "</h3>");
+		alertify.log(thisMsg);
 		//speakMessage("Welcome to desktop " + n.value + " (" + d.value + ")");
 		//repStat();
 	  }

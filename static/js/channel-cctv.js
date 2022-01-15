@@ -33,6 +33,29 @@ function procMessage(obj) {
 					take_snapshot();
 				}
 				break;
+			case "SYS_STRUWM_BATTERY_GET":
+				console.log("SYS_STRUWM_BATTERY_GET");	
+				var uid = cmdata[3];
+				console.log("uid: "+uid);
+				var desktop = cmdata[4];
+				console.log("desktop: "+desktop);
+				var uwm = "desktop" + document.getElementById("uwm").value;
+				console.log("uwm: "+uwm);
+				if (uid != "" && desktop === uwm) {
+					//battery status
+					console.log("triggered cctv battery status!");
+					if (window.XMLHttpRequest)
+					  {// code for IE7+, Firefox, Chrome, Opera, Safari
+					  cxhr=new XMLHttpRequest();
+					  }
+					else
+					  {// code for IE6, IE5
+					  cxhr=new ActiveXObject('MSXML2.XMLHTTP.3.0');
+					  }
+					cxhr.open("GET","/notifications?N_FUNC=SEND_BATTERY_STATUS&N_ID=" + uwm + "&N_MSG=" + localStorage[root+'batteryLevelMessage'], true); 
+					cxhr.send();
+				}
+				break;
 			case "SYS_STRUWM_CALL":
 				console.log("SYS_STRUWM_CALL...");
 				var server = cmdata[3];
@@ -60,14 +83,11 @@ function procMessage(obj) {
                     var win = window.open(rtcLink, '1366002941508');
                     setTimeout(function () { win.close();}, 600000);
 				}
-				break;
-				
-
+				break;		
 		}
 		return;	
 	}
 };
-
 
 function onClose() {
 	FL_CONNECTED_OK = false;

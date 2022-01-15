@@ -28,10 +28,11 @@
 <input type="hidden" id="UID" value="{{.STR_FILLER2}}">
 <script src='https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js'></script>
 <script id="rendered-js">
-var editor = ace.edit("editor");
-editor.setTheme("ace/theme/monokai");
-editor.getSession().setMode("ace/mode/javascript");
-//# sourceURL=pen.js
+	var editor = ace.edit("editor");
+	editor.session.setUseWrapMode(true);
+	editor.setTheme("ace/theme/monokai");
+	editor.getSession().setMode("ace/mode/javascript");
+	//# sourceURL=pen.js
 </script>
 <script type="text/javascript" src="/static/js/keyEvents4.js"></script>
 </body>

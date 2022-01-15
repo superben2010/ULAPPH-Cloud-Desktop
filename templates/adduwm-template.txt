@@ -86,6 +86,7 @@
   Auto-open-confirm: <input type="checkbox" id="open_confirm"><br>
   Show Button Only: <input type="checkbox" id="button"><br>
   Tile windows: <input type="checkbox" id="tile"><br>
+  UWM Wallpaper Only: <input type="checkbox" id="uwmranw"><br>
   Fixed Wallpaper: <input type="text" id="wallp" maxlength=500><br><br>
   {{if ne .STR_FILLER2 ""}}
   Show UWM Random Wallpapers Only: <input type="checkbox" id="uwmranw"><br>
@@ -185,6 +186,9 @@ function editUWMSettings() {
 }
 
 function appendUWMSettings(desktop) {
+	if (desktop == undefined || desktop == "undefined") {
+		desktop = "main";
+	}
 	console.log("appendUWMSettings desktop: "+desktop);
 	var e = document.getElementById("saveicon");
 	var curImg = e.src;

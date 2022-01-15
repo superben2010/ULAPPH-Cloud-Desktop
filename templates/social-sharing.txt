@@ -39,31 +39,31 @@
   <a href="{{.STR_FILLER1}}" target="{{.STR_FILLER2}}-info" class="button button-block button-rounded button-large"><b>{{.STR_FILLER2}}</b></a>
   <a href="{{.STR_FILLER1}}" target="{{.STR_FILLER2}}-info" class="button button-block button-rounded button-large">{{.STR_FILLER1}}</a>
   <a href="https://www.facebook.com/sharer.php?u={{.STR_FILLER1}}" title="facebook" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
-		<i class="fa fa-facebook"></i>
+		Facebook
   </a>
   <a href="https://twitter.com/intent/tweet?url={{.STR_FILLER1}}&text={{.STR_FILLER2}}&via=ULAPPH&hashtags=MOTD"title="twitter" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
-		<i class="fa fa-twitter"></i>
+		Twitter
   </a>
-  <a href="https://plus.google.com/share?url={{.STR_FILLER1}}" title="google-plus" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
+  <!--a href="https://plus.google.com/share?url={{.STR_FILLER1}}" title="google-plus" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
 		<i class="fa fa-google-plus"></i>
-  </a>
+  </a-->
   <a href="https://pinterest.com/pin/create/bookmarklet/?media={{.STR_FILLER1}}&url={{.STR_FILLER1}}&is_video=&description={{.STR_FILLER2}}" title="pinterest" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
-		<i class="fa fa-pinterest"></i>
+		Pinterest
   </a>
   <a href="https://www.linkedin.com/shareArticle?url={{.STR_FILLER1}}&title={{.STR_FILLER2}}" title="linkedin" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
-		<i class="fa fa-linkedin"></i>
+		LinkedIn
   </a>
   <!--a href="https://buffer.com/add?text={{.STR_FILLER2}}&url={{.STR_FILLER1}}" title="buffer" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
 		<i class="fa fa-buffer"></i>
   </a-->
   <a href="http://digg.com/submit?url={{.STR_FILLER1}}&title={{.STR_FILLER2}}" title="digg" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
-		<i class="fa fa-digg"></i>
+		Digg
   </a>
   <a href="https://www.tumblr.com/widgets/share/tool?canonicalUrl={{.STR_FILLER1}}&title={{.STR_FILLER2}}&caption={{.STR_FILLER2}}" title="tumblr" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
-		<i class="fa fa-tumblr"></i>
+		Tumblr
   </a>
   <a href="https://reddit.com/submit?url={{.STR_FILLER1}}&title={{.STR_FILLER2}}" title="reddit" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
-		<i class="fa fa-reddit"></i>
+		Reddit
   </a>
   <!--a href="http://www.stumbleupon.com/submit?url={{.STR_FILLER1}}&title={{.STR_FILLER2}}" title="sumbleupon" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
 		<i class="fa fa-sumbleupon"></i>
@@ -72,7 +72,7 @@
 		<i class="fa fa-delicious"></i>
   </a-->
   <a href="https://www.blogger.com/blog-this.g?u={{.STR_FILLER1}}&n={{.STR_FILLER2}}&t={{.STR_FILLER2}}" title="blogger" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
-		<i class="fa fa-rss"></i>
+		RSS
   </a>
   <!--a href="http://www.livejournal.com/update.bml?subject={{.STR_FILLER1}}&event={{.STR_FILLER2}}" title="livejournal" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
 		<i class="fa fa-livejournal"></i>
@@ -84,7 +84,7 @@
 		<i class="fa fa-yahoo"></i>
   </a-->
   <a href="https://www.yammer.com/messages/new?login=true&trk_event=yammer_share&status={{.STR_FILLER1}}" title="yammer" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
-		<i class="fa fa-yahoo"></i>
+		Yammer
   </a> 
   <!--a href="http://friendfeed.com/?url={{.STR_FILLER1}}" title="friendfeed" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
 		<i class="fa fa-friendfeed"></i>
@@ -107,9 +107,9 @@
   <!--a href="http://line.me/R/msg/text/?{{.STR_FILLER1}}" title="line-me" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
 		<i class="fa fa-line-me"></i>
   </a-->
-  <a href="https://web.skype.com/share?url={{.STR_FILLER1}}" title="skype" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
-		<i class="fa fa-skype"></i>
-  </a>
+  <!--a href="https://web.skype.com/share?url={{.STR_FILLER1}}" title="skype" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
+		Skype
+  </a-->
   <!--a href="https://telegram.me/share/url?url={{.STR_FILLER1}}&text={{.STR_FILLER2}}" title="telegram" target="ulapphshare" class="button button-primary button-box button-giant button-longshadow-right">
 		<i class="fa fa-telegram"></i>
   </a-->

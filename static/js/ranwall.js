@@ -48,9 +48,14 @@ function changWP()
 		return;
 	}*/
 	if (localStorage[root+'speakingNow'] == 'Y') {
-		consoleLogger("changWP() skipped...");
+		consoleLogger("changWP() skipped... speakingNow!");
 		return;
 	}
+	if (localStorage[root+"news"] == "on") {
+		consoleLogger("changWP() skipped... news On!");
+		return;
+	}
+	
 	//check if random is paused
 	var rn = document.getElementById("ranid")
 	ranVal = rn.value;
@@ -103,6 +108,39 @@ function changWP()
 		  }
 		}
 	};
+}
+
+function selectRandomDesktop() {
+  consoleLogger("selectRandomDesktop()");
+  if (window.XMLHttpRequest)
+  {// code for IE7+, Firefox, Chrome, Opera, Safari
+	xhrd=new XMLHttpRequest();
+  }
+  else
+  {// code for IE6, IE5
+	xhrd=new ActiveXObject('MSXML2.XMLHTTP.3.0');
+  }
+
+  // construct an HTTP request
+  var desktop = document.getElementById("desktop").value;
+  var uwmwponly = document.getElementById("uwmwponly").value;
+  xhrd.open("GET", "/media?FUNC_CODE=GET_RAN_DESK"+"&uwmwponly="+uwmwponly+"&desktop="+desktop+"&UID="+thisUser, true);
+  xhrd.setRequestHeader('Content-Type', 'text/plain; charset=UTF-8');
+  xhrd.send();
+
+ 	xhrd.onreadystatechange = function(){
+	  if (xhrd.readyState==4 && xhrd.status==200)
+		{
+		  var rdData = xhrd.responseText;
+		  consoleLogger(rdData);
+
+		  if (rdData != "") {
+			//get random desk
+			consoleLogger("funcSetTopicFromCats: "+rdData);
+			funcSetTopicFromCats(rdData);
+		  }
+		}
+	};	
 }
 
 function ValidURL(textval) {
@@ -272,7 +310,10 @@ function scanCctvStream(direction) {
 						var thisMsg = hum + " ago";
                         if (localStorage["cctv-stream-review-speak"] == "Y") {
 						    speakMessage(thisMsg);
-                        }
+                        } else {
+							SpeechKITT.setInstructionsText('');
+							SpeechKITT.setSampleCommands([thisMsg]);
+						}
 						consoleLogger(thisMsg);
 						var unix_timestamp = etime;
 						// Create a new JavaScript Date object based on the timestamp
@@ -316,7 +357,10 @@ function scanCctvStream(direction) {
 						var thisMsg = hum + " ago";
                         if (localStorage["cctv-stream-review-speak"] == "Y") {
 						    speakMessage(thisMsg);
-                        }
+                        } else {
+							SpeechKITT.setInstructionsText('');
+							SpeechKITT.setSampleCommands([thisMsg]);
+						}
 						consoleLogger(thisMsg);
 						var unix_timestamp = etime;
 						// Create a new JavaScript Date object based on the timestamp

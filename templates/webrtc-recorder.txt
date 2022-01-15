@@ -557,7 +557,7 @@
             function captureScreen(config) {
                 getScreenId(function(error, sourceId, screenConstraints) {
                     if (error === 'not-installed') {
-                        document.write('<h1><a target="_blank" href="https://chrome.google.com/webstore/detail/screen-capturing/ajhifddimkapgcifgcodmmfdlknahffk">Please install this chrome extension then reload the page.</a></h1>');
+                        document.write('<h1><a target="_blank" href="https://chrome.google.com/webstore/detail/recordrtc/ndcljioonkecdnaaihodjgiliohngojp">Please install this chrome extension then reload the page.</a></h1>');
                     }
 
                     if (error === 'permission-denied') {

@@ -10,7 +10,20 @@
             return false;
         }
     </script>
-
+	<style>
+	.button {
+	  background-color: #4CAF50;
+	  border: none;
+	  color: white;
+	  padding: 15px 32px;
+	  text-align: center;
+	  text-decoration: none;
+	  display: inline-block;
+	  font-size: 30px;
+	  margin: 4px 2px;
+	  cursor: pointer;
+	}
+	</style>
 
     <title>Motion Alarm</title>
 
@@ -79,6 +92,8 @@
     <script type="text/javascript" src="/static/js/soundmanager2.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+	<link rel="stylesheet" href="/static/css/alertify.core.css" />
+    <link rel="stylesheet" href="/static/css/alertify.default.css" id="toggleCSS" />
     <style>
         @import url(https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700);
         body {
@@ -109,22 +124,28 @@
 </head>
 
 <body>
-    <input type="button" id="toggle" value="Motion Alarm is disabled" />
+    <input type="button" id="toggle" class="button" value="Motion Alarm is disabled" />
     <div id="container" style="height: 0px; width: 0px;"><canvas width="0" height="0"></canvas></div>
+	<script src="/js/alertify.min.js"></script>
     <script>
       localStorage["soundBusy"] = "Y";
+	  alertify.success("Set soundBusy=Y");
       var wakeLockEnabled = false;
       var toggleEl = document.querySelector("#toggle");
       toggleEl.addEventListener('click', function() {
         if (!wakeLockEnabled) {
           localStorage["soundBusy"] = "N";
+		  alertify.success("Set soundBusy=N");
           wakeLockEnabled = true;
           toggleEl.value = "Motion Alarm is enabled";
+		  alertify.error("Motion Alarm is enabled");
 		  console.log(toggleEl.value);
         } else {
           localStorage["soundBusy"] = "Y";
           wakeLockEnabled = false;
           toggleEl.value = "Motion Alarm is disabled";
+		  alertify.log("Motion Alarm is disabled");
+		  soundManager.stopAll();
 		  console.log(toggleEl.value);
         }
       }, false);
@@ -155,6 +176,7 @@
 
         function soundAlarm() {
 			console.log("soundAlarm()");
+			alertify.log("soundAlarm()");
             if (localStorage["soundBusy"] === "Y") {
                 return;
             }
@@ -179,13 +201,14 @@
             soundManager.createSound({
                 id: 'mySoundAC',
                 volume: 99,
-                url: root + "/static/audio/industrialAlarm.ogg"
+                //url: root + "/static/audio/industrialAlarm.ogg"
+				url: root + "/static/audio/industrialAlarm.mp3"
             });
             soundManager.play('mySoundAC');
             return;
         };
 
-        setInterval(changePicture, 10000);
+        //setInterval(changePicture, 10000);
         changePicture();
 
         if (window.DeviceOrientationEvent) {
@@ -197,8 +220,14 @@
                 var dify = Math.abs(parseInt(localStorage["y"]) - parseInt(y));
                 //alert("difx: "+difx);
 				console.log("difx: "+difx);
+				if (difx > 0) {
+					alertify.success("difx: "+difx);
+				}
                 //alert("dify: "+dify);
 				console.log("dify: "+dify);
+				if (dify > 0 ) {
+					alertify.success("dify: "+dify);
+				}
                 //save x & y
                 localStorage["x"] = x;
                 localStorage["y"] = y;
@@ -206,16 +235,19 @@
                 var factory = x / $(window).height();
                 scope.angleTarget = factorx + 2;
                 scope.zoomTarget = 0.5 + 4.0 * factory;
-                if (difx > 0 || dify > 0) {
+                if (difx > 0 && dify > 0) {
                     //value changed
 					console.log("value changed");
+					alertify.success("value changed");
                     soundAlarm();
                     //alert("motion detected!");
 					console.log("motion detected!");
+					alertify.error("motion detected!");
                 }
             });
         } else {
             alert("Your device does not support device orientated motions.");
+			alertify.log("Your device does not support device orientated motions.");
         }
 
         $(window).mousemove(function(event) {

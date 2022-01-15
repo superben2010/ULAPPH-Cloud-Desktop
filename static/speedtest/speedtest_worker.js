@@ -12,17 +12,6 @@ var testStatus=0, //0=not started, 1=download test, 2=ping+jitter test, 3=upload
 	pingStatus="", //ping in milliseconds with 2 decimal digits
 	jitterStatus="", //jitter in milliseconds with 2 decimal digits
 	clientIp=""; //client's IP address as reported by getIP.php
-//parse URL values
-var urlParams;
-var match,
-		pl     = /\+/g,  // Regex for replacing addition symbol with a space
-		search = /([^&=]+)=?([^&]*)/g,
-		decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
-		query  = window.location.search.substring(1);
-
-urlParams = {};
-while (match = search.exec(query))
-   urlParams[decode(match[1])] = decode(match[2]);
    
 //test settings. can be overridden by sending specific values with the start command
 var settings={ 

@@ -1,4 +1,4 @@
-'use strict';
+//'use strict';
 var urlParams;
 
 initFirebase();
@@ -69,8 +69,31 @@ function initFirebase() {
 	}
 	//if user is not logged in; no idToken in LS!
 	if (idToken == "" || idToken == undefined) {
-		console.log("no token found in ls");
-		return;
+		//console.log("no token found in ls");
+		if (window.XMLHttpRequest)
+		  {// code for IE7+, Firefox, Chrome, Opera, Safari
+		  cxhr2=new XMLHttpRequest();
+		  }
+		else
+		  {// code for IE6, IE5
+		  cxhr2=new ActiveXObject('MSXML2.XMLHTTP.3.0');
+		  } 
+		cxhr2.open("GET","/tools?FUNC=GET_TOKEN", true); 
+		cxhr2.send();
+		
+		 cxhr2.onreadystatechange=function()
+		  {
+		  if (cxhr2.readyState==4 && cxhr2.status==200)
+			{
+				var currVal = JSON.parse(cxhr2.responseText);
+				console.log(currVal);
+				idToken = currVal.STR_FILLER1;
+				localStorage[root+'aep'] = currVal.STR_FILLER2;
+				localStorage[root+'sss'] = currVal.STR_FILLER3;
+				localStorage[root+'tok'] = idToken;
+				return;
+			}
+		  }
 	}
     firebase.auth().signInWithCustomToken(String(idToken)).catch(function(error) {
       console.log('Login Failed!', error.code);

@@ -112,7 +112,7 @@ function uwmQuickSearch() {
 		if (idxContent != "" && idxContent != undefined) {
 			console.log("get from storage");
 			var tgt2 = 'Quick Search';
-			var jswmstr = "'" + "LS" + "', 500, 300, 'left', 'top', {title: '" + tgt2 + "', icon: '/static/img/jswm-web.png'}";
+			var jswmstr = "'" + "LS" + "', 800, 500, 'left', 'top', {title: '" + tgt2 + "', icon: '/static/img/jswm-web.png'}";
 			eval('windowManager.openDOC(' + jswmstr + ');');
 		}
 	} else {
@@ -124,7 +124,7 @@ function uwmQuickSearch() {
 		console.log("open minibrowser");
 		var tgt = '/tools?FUNC=WIDGET&t=MiniBrowserGet';
 		var tgt2 = 'ULAPPH Quick Search';
-		var jswmstr = "'" + tgt + "', 500, 300, 'left', 'top', {title: '" + tgt2 + "', icon: '/static/img/jswm-web.png'}";
+		var jswmstr = "'" + tgt + "', 800, 500, 'left', 'top', {title: '" + tgt2 + "', icon: '/static/img/jswm-web.png'}";
 		eval('windowManager.openURI(' + jswmstr + ');');
 	}
 	
@@ -156,7 +156,7 @@ function uwmStartSearch() {
 		if (idxContent != "" && idxContent != undefined) {
 			console.log("get from storage");
 			var tgt2 = 'ULAPPH Start Menu';
-			var jswmstr = "'" + "LS" + "', 500, 300, 'left', 'top', {title: '" + tgt2 + "', icon: '/static/img/jswm-web.png'}";
+			var jswmstr = "'" + "LS" + "', 800, 500, 'left', 'top', {title: '" + tgt2 + "', icon: '/static/img/jswm-web.png'}";
 			eval('windowManager.openST(' + jswmstr + ');');
 		}
 	} else {
@@ -168,14 +168,14 @@ function uwmStartSearch() {
 		console.log("open minibrowser");
 		var tgt = '/tools?FUNC=WIDGET&t=ULAPPHStart';
 		var tgt2 = 'ULAPPH Start Menu';
-		var jswmstr = "'" + tgt + "', 500, 300, 'left', 'top', {title: '" + tgt2 + "', icon: '/static/img/jswm-web.png'}";
+		var jswmstr = "'" + tgt + "', 800, 500, 'left', 'top', {title: '" + tgt2 + "', icon: '/static/img/jswm-web.png'}";
 		eval('windowManager.openURI(' + jswmstr + ');');
 	}
 
     console.log("open minibrowser");
     var tgt = '/tools?FUNC=WIDGET&t=ULAPPHStart';
     var tgt2 = 'ULAPPH Start Menu';
-    var jswmstr = "'" + tgt + "', 500, 300, 'left', 'top', {title: '" + tgt2 + "', icon: '/static/img/jswm-web.png'}";
+    var jswmstr = "'" + tgt + "', 800, 500, 'left', 'top', {title: '" + tgt2 + "', icon: '/static/img/jswm-web.png'}";
     eval('windowManager.openURI(' + jswmstr + ');');
 	
 	var aSound = document.createElement('audio');

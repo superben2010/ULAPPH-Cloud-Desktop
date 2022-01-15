@@ -4,12 +4,12 @@ cron:
   schedule: every 6 hours
 
 #- description: regular updates of STATS.ACCESS stats
-  #url: /ulapph-router?RTR_FUNC=TASK_UPDATE_ACCESS
-  #schedule: every 6 hours
+# url: /ulapph-router?RTR_FUNC=TASK_UPDATE_ACCESS
+# schedule: every 6 hours
 
 #- description: regular updates of STATS.DESKTOP stats
-  #url: /ulapph-router?RTR_FUNC=TASK_UPDATE_DESKTOP
-  #schedule: every 6 hours
+# url: /ulapph-router?RTR_FUNC=TASK_UPDATE_DESKTOP
+# schedule: every 6 hours
   
 - description: regular updates of STATS.OS / STATS.BROWSER stats
   url: /ulapph-router?RTR_FUNC=TASK_UPDATE_OSBR
@@ -63,9 +63,9 @@ cron:
 #  url: /task-memcache-adslotsProcessor
 #  schedule: every 30 minutes
 
-- description: regular updates of adslots MEMCACHE
-  url: /ulapph-router?RTR_FUNC=TASK_ADS_SLOTS
-  schedule: every 30 minutes   
+#- description: regular updates of adslots MEMCACHE
+#  url: /ulapph-router?RTR_FUNC=TASK_ADS_SLOTS
+#  schedule: every 30 minutes   
 
 - description: regular updates of users MEMCACHE
   url: /ulapph-router?RTR_FUNC=TASK_USER_PROC
@@ -85,7 +85,6 @@ cron:
 
 - description: regular update of top statistics
   url: /ulapph-router?RTR_FUNC=CACHE_TOP_STATS
-#  schedule: every 2 hours
   schedule: every 12 hours
 
 #- description: regular update of random s/s sources
@@ -176,13 +175,13 @@ cron:
 #  url: /ulapph-router?RTR_FUNC=CLEAR_NOTIFS_CACHE_MIDNIGHT
 #  schedule: every day 00:00
   
-- description: regular update of earthquakes (PH)
-  url: /ulapph-router?RTR_FUNC=CACHE_URL_FETCH_01
-  schedule: every 15 minutes
+#- description: regular update of earthquakes (PH)
+#  url: /ulapph-router?RTR_FUNC=CACHE_URL_FETCH_01
+#  schedule: every 15 minutes
 
 - description: regular cleanup of inactive users
   url: /ulapph-router?RTR_FUNC=TASK_CLEAN_UP_INACT_USERS
-  schedule: every 1 hours
+  schedule: every 6 hours
 
 #- description: regular checking of urlfetch jobs
 #  url: /ulapph-router?RTR_FUNC=URL_FETCH_NOTIFS&f=EVERY_1_MINUTES
@@ -213,8 +212,16 @@ cron:
   schedule: every 3 hours
   
 - description: regular checking of urlfetch jobs
+  url: /ulapph-router?RTR_FUNC=URL_FETCH_NOTIFS&f=EVERY_4_HOURS
+  schedule: every 4 hours
+  
+- description: regular checking of urlfetch jobs
   url: /ulapph-router?RTR_FUNC=URL_FETCH_NOTIFS&f=EVERY_6_HOURS
   schedule: every 6 hours
+  
+- description: regular checking of urlfetch jobs
+  url: /ulapph-router?RTR_FUNC=URL_FETCH_NOTIFS&f=EVERY_8_HOURS
+  schedule: every 8 hours
  
 - description: regular checking of urlfetch jobs
   url: /ulapph-router?RTR_FUNC=URL_FETCH_NOTIFS&f=EVERY_12_HOURS
@@ -223,6 +230,14 @@ cron:
 - description: regular checking of urlfetch jobs
   url: /ulapph-router?RTR_FUNC=URL_FETCH_NOTIFS&f=EVERY_24_HOURS
   schedule: every 24 hours
+
+- description: regular checking of urlfetch jobs
+  url: /ulapph-router?RTR_FUNC=URL_FETCH_NOTIFS&f=EVERY_WEEK
+  schedule: every 168 hours
+
+- description: regular checking of urlfetch jobs
+  url: /ulapph-router?RTR_FUNC=URL_FETCH_NOTIFS&f=EVERY_MONTH
+  schedule: every 720 hours
    
 #- description: regular checking of ifs and wtb items for each user
 #  url: /ulapph-router?RTR_FUNC=URL_FETCH_IFS_WTB
@@ -230,7 +245,6 @@ cron:
 
 - description: regular purging of sessions & people directory
   url: /ulapph-router?RTR_FUNC=SESSION_ONLINE
-#  schedule: every 30 minutes synchronized
   schedule: every 1 hours synchronized
   
 #- description: regular emails containing system reports

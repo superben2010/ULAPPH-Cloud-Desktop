@@ -11,9 +11,6 @@ handlers:
   script: auto
   secure: always
 
-#- url: /m
-#  script: auto
-
 - url: /bible
   script: auto
   secure: always
@@ -27,7 +24,11 @@ handlers:
   script: auto
   secure: always
 
-- url: /oauth2/microsoft/call
+#- url: /oauth2/microsoft/call
+#  script: auto
+#  secure: always
+
+- url: /ws
   script: auto
   secure: always
 
@@ -42,36 +43,6 @@ handlers:
 - url: /oauth2/admin/callback
   script: auto
   secure: always
-
-#- url: /oauth2/google/callback/token
-#  script: auto
-
-#- url: /auth
-#  script: auto
-
-# facebook
-#- url: /auth/facebook/callback
-#  script: auto  
-
-# github 
-#- url: /auth/github/callback
-#  script: auto
-
-# gplus 
-#- url: /auth/gplus/callback
-#  script: auto
-
-# instagram 
-#- url: /auth/instagram/callback
-#  script: auto
-
-# linked in 
-#- url: /auth/linkedin/callback
-#  script: auto
-
-# onedrive
-#- url: /auth/onedrive/callback
-#  script: auto
 ############# OAUTH2 END ##################
 - url: /share
   script: auto
@@ -121,10 +92,6 @@ handlers:
   script: auto
   secure: always
 
-#- url: /session_purge
-#  script: auto
-#  login: admin
-
 - url: /logout
   script: auto
   secure: always
@@ -168,13 +135,10 @@ handlers:
 - url: /tree
   script: auto
   secure: always
-  
-#- url: /goplus
-#  script: auto
 
-- url: /utube
-  script: auto
-  secure: always
+#- url: /utube
+#  script: auto
+#  secure: always
 
 - url: /search
   script: auto
@@ -183,10 +147,6 @@ handlers:
 - url: /directory
   script: auto
   secure: always
-
-#- url: /gsearch
-#  script: auto
-#  secure: always
 
 - url: /wall
   script: auto
@@ -268,9 +228,6 @@ handlers:
   script: auto
   secure: always
 
-#D0068  
-#- url: /invitation
-#  script: auto
 - url: /orgchart
   script: auto
   secure: always
@@ -314,14 +271,6 @@ handlers:
 - url: /click-url/
   script: auto
   secure: always
-
-#- url: /click-url-public/
-#  script: auto
-#  secure: always
-
-#- url: /desktops
-#  script: auto
-#  secure: always
 
 - url: /orch
   script: auto
@@ -371,13 +320,6 @@ handlers:
 - url: /go
   script: auto
   secure: always
-
-#- url: /adhoc-web-load-TDSARTL    
-#  script: auto
-#  login: admin
-
-#- url: /events    
-#  script: auto
   
 - url: /notifications    
   script: auto
@@ -477,7 +419,8 @@ handlers:
   upload: static/(.*\.properties)
 
 - url: /(.*\.json)
-  mime_type: text/plain         
+#  mime_type: text/plain         
+  mime_type: application/json
   static_files: static/\1
   upload: static/(.*\.json)
 

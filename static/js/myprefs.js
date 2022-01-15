@@ -73,7 +73,7 @@ function saveAll() {
 		}
 	};
 	
-	alert("Colors saved! Kindly reload desktop so the colors will take effect.");
+	//alert("Colors saved! Kindly reload desktop so the colors will take effect.");
 	return;
 }
 
@@ -353,7 +353,7 @@ function saveAllTheme() {
 		]
 	});
 	
-	alert("Colors saved! Kindly reload desktop so the colors will take effect.");
+	//alert("Colors saved! Kindly reload desktop so the colors will take effect.");
 	return;
 }
 

@@ -122,10 +122,22 @@ consoleLogger("Client geolocation failed!");
 
 function geoloc() {
 	consoleLogger("geoloc called... uwms: "+uwms.value);
+	//dummy
+	//change speechkit theme
+	var sColor = document.getElementById("startColor").value;
+	var aColor = document.getElementById("activeColor").value;
+	document.getElementById("skitt-ui").style.backgroundColor = aColor;
+	document.getElementById("skitt-toggle-button").style.backgroundColor = sColor;
 	if (uwms.value != "") {
 		//run only on main uwm
 		return;
 	}
+	//Run websocket (for local only)
+	if (document.getElementById("isLocal").value == "true") {
+		consoleLogger("initWebsocket()");
+		initWebsocket();
+	}
+	
 	consoleLogger("geoloc running...");
 	//geoLatLon();
 	consoleLogger("geoloc() running...");
@@ -160,6 +172,12 @@ function geoLatLon() {
 	}
 }
 function speakTime(){
+	if (document.hidden) {
+		return;
+	}
+	if (localStorage[root + 'quite-flag'] == "on") {
+		return;
+	}	
 	if (localStorage[root+'speakingNow'] == 'Y') {
 		return;
 	}
@@ -201,6 +219,12 @@ function speakTime(){
 }
 
 function speakMessage(thisMsg){
+	if (document.hidden) {
+		return;
+	}
+	if (localStorage[root + 'quite-flag'] == "on") {
+		return;
+	}	
 	if (localStorage[root+'speakingNow'] == 'Y') {
 		return;
 	}
@@ -249,6 +273,9 @@ function speakMessage(thisMsg){
 	}
 }
 function sendPingRequest(){
+	if (document.hidden) {
+		return;
+	}
 	var p = new Ping();
 	var root = location.protocol + '//' + location.host + '/social?SO_FUNC=get-health';
 	p.ping(root, function(data) {
@@ -266,8 +293,9 @@ function sendPingRequest(){
 			}
 		} else {
 			isSlow = false;
-			var uTitle = document.getElementById("desktop").value + "::" + document.getElementById("dName").value;
-			titleBlink(uTitle+" "+data+"ms",uTitle+" delay "+data+"ms");
+		//var uTitle = "[" + localStorage['mylocation-input'] + "]" + document.getElementById("desktop").value + "::" + document.getElementById("dName").value;
+		var uTitle = "[" + document.getElementById("locNum").innerHTML + "]" + document.getElementById("desktop").value + "::" + document.getElementById("dName").value;
+			titleBlink(uTitle+" "+data+"ms",uTitle+" delay "+data+"ms" + " :: ***" + document.getElementById("locNum").title + "***");
 			document.getElementById("ping-res").innerHTML =  e + " " + data + "ms";
 		}
 	});	
@@ -281,8 +309,10 @@ function loopRequest(){
 	if (isSlow == false) {
 	//do this if internet is fast!
 		//check if new messages
-		consoleLogger("chkGBM()");
-		chkGBM();
+		//consoleLogger("chkGBM()");
+		//chkGBM();
+		consoleLogger("chkGBM2()");
+		chkGBM2();
 		//check eq alarms
 		consoleLogger("chkSYS1()");
 		chkSYS1();
@@ -316,6 +346,9 @@ function loopRequest(){
 }
 
 function chkGBM() {
+	if (localStorage[root + 'quite-flag'] == "on") {
+		return;
+	}
     if (chkgbm.value == "false") {
         return;
     }
@@ -348,7 +381,7 @@ function chkGBM() {
 				
 				alertify.set({ delay: 15000 });
 				alertify.success(msgText); 
-				speakMessage(currVal);
+				//speakMessage(currVal);
 				
 				var aSound = document.createElement('audio');
 				var root = location.protocol + '//' + location.host;
@@ -373,7 +406,55 @@ function chkGBM() {
 	 return;
 };
 
+function chkGBM2() {
+	if (localStorage[root + 'quite-flag'] == "on") {
+		return;
+	}
+    if (chkgbm.value == "false") {
+        return;
+    }
+	var aUser = document.getElementById("aUser");
+	if (aUser.value == "") {
+		return;
+	}
+	if (window.XMLHttpRequest)
+	  {// code for IE7+, Firefox, Chrome, Opera, Safari
+	  xmlhttpgbm2=new XMLHttpRequest();
+	  }
+	else
+	  {// code for IE6, IE5
+	  xmlhttpgbm2=new ActiveXObject('MSXML2.XMLHTTP.3.0');
+	  }
+	  
+	chk_url = '/people?PEOPLE_FUNC=CHECK-GBM-NUM-NEW' + "&UID=" + aUser.value;
+	xmlhttpgbm2.open("GET",chk_url,true);
+	xmlhttpgbm2.send();
+	
+	 xmlhttpgbm2.onreadystatechange=function()
+	  {
+	  if (xmlhttpgbm2.readyState==4 && xmlhttpgbm2.status==200)
+		{
+		var currVal = xmlhttpgbm2.responseText;
+			if (currVal != "") {
+				//update the number
+				console.log("New GB messages: "+currVal);
+				document.getElementById('lblCartCount').innerHTML = currVal;
+				if (currVal != "0") {
+					consoleLogger("chkGBM()");
+					chkGBM();
+				}
+				return;
+			}
+		return;
+		}
+	 }
+	 return;
+};
+
 function chkSYS1() {
+	if (localStorage[root + 'quite-flag'] == "on") {
+		return;
+	}
     if (chksys1.value == "false") {
         return;
     }
@@ -426,7 +507,9 @@ function chkSYS1() {
 };
 
 function chkSYS2() {
-	
+	if (localStorage[root + 'quite-flag'] == "on") {
+		return;
+	}
 	if (window.XMLHttpRequest)
 	  {// code for IE7+, Firefox, Chrome, Opera, Safari
 	  xmlhttact1=new XMLHttpRequest();
@@ -470,6 +553,9 @@ function chkSYS2() {
 };
  
 function chkSYS3() {
+	if (localStorage[root + 'quite-flag'] == "on") {
+		return;
+	}
 	if (window.XMLHttpRequest)
 	  {// code for IE7+, Firefox, Chrome, Opera, Safari
 	  xmlhttact1=new XMLHttpRequest();
@@ -511,7 +597,9 @@ function chkSYS3() {
 };
  
 function chkBM() {
-	
+	if (localStorage[root + 'quite-flag'] == "on") {
+		return;
+	}	
 	if (window.XMLHttpRequest)
 	  {// code for IE7+, Firefox, Chrome, Opera, Safari
 	  xmlhttbm=new XMLHttpRequest();
@@ -554,6 +642,9 @@ function chkBM() {
 };
 
 function chkKN() {
+	if (localStorage[root + 'quite-flag'] == "on") {
+		return;
+	}
 	if (window.XMLHttpRequest)
 	  {// code for IE7+, Firefox, Chrome, Opera, Safari
 	  xmlhttkn=new XMLHttpRequest();
@@ -596,7 +687,9 @@ function chkKN() {
 };
  
 function chkMOTD() {
-	
+	if (localStorage[root + 'quite-flag'] == "on") {
+		return;
+	}
 	if (window.XMLHttpRequest)
 	  {// code for IE7+, Firefox, Chrome, Opera, Safari
 	  xmlhttmo=new XMLHttpRequest();

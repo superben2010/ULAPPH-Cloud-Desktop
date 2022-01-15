@@ -89,10 +89,10 @@ img { border: 0; max-width: 100%; }
 h1 {
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 2.5em;
-  line-height: 1.5em;
+  /*line-height: 1.5em;*/
   letter-spacing: -0.05em;
-  margin-bottom: 20px;
-  padding: .1em 0;
+  /*margin-bottom: 20px;*/
+  /*padding: .1em 0;*/
   color: #444;
 	position: relative;
 	overflow: hidden;

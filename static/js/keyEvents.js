@@ -6,48 +6,83 @@ function handleBodyKeyDown(event) {
 
   switch (event.keyCode) {
 	case 191: //forward slash key
+		console.log("forward slash key");
 		dispSearch();
 		event.preventDefault();
 		break;
 		
 	case 222: //sharp key
+		console.log("sharp key");
 		uwmArrWin();
 		event.preventDefault();
 		break;
 		
 	case 187: //plus key
+		console.log("plus key");
 		uwmOnOff();
 		event.preventDefault();
 		break;
 		
 	case 189: //minus key
+		console.log("minus key");
 		uwmOnOff();
 		event.preventDefault();
 		break;
 		
 	case 40: //down arrow key
-		scanCctvStream("O");
+		console.log("down arrow key");
+		if (localStorage[root+"news"] == "on") {
+			selectRandomDesktop();
+		} else if (localStorage[root+'isStreaming'] == 'Y') {
+			scanCctvStream("O");
+		} else {
+			nextWp();
+		}
 		event.preventDefault();
 		break;
 		
 	case 39: //right arrow key
 		//nextWp();
-		scanCctvStream("R");
+		console.log("right arrow key");
+		if (localStorage[root+"news"] == "on") {
+			stopTalking();
+			funcshow();
+		} else if (localStorage[root+'isStreaming'] == 'Y') {
+			scanCctvStream("R");
+		} else {
+			nextWp();
+		}
 		event.preventDefault();
 		break;
 
 	case 38: //up arrow key
-		scanCctvStream("C");
+		console.log("up arrow key");
+		if (localStorage[root+"news"] == "on") {
+			selectRandomDesktop();
+		} else if (localStorage[root+'isStreaming'] == 'Y') {
+			scanCctvStream("C");
+		} else {
+			nextWp();
+		}
 		event.preventDefault();
 		break;
 		
 	case 37: //left arrow key
 		//prevWp();
-		scanCctvStream("L");
+		console.log("left arrow key");
+		if (localStorage[root+"news"] == "on") {
+			stopTalking();
+			funcshow();
+		} else if (localStorage[root+'isStreaming'] == 'Y') {
+			scanCctvStream("L");
+		} else {
+			nextWp();
+		}
 		event.preventDefault();
 		break;
 		
 	case 32: //space key
+		console.log("space key");
 		//musicOnOff();
         var element = document.getElementById("page");
         element.scrollIntoView();
@@ -55,11 +90,15 @@ function handleBodyKeyDown(event) {
 		break;
 		
 	case 9: //tab key
+		console.log("tab key");
 		winOnOff();
+		//stop AI speech
+		stopTalking();
 		event.preventDefault();
 		break;
 		
 	case 27: //escape key
+		console.log("escape key");
 		uwmQuickSearch();
 		event.preventDefault();
 		break;
@@ -97,8 +136,6 @@ function dispSearch() {
 	//alertify.set({ delay: 59000 });
 	//alertify.set({ delay: 300000 });
 	alertify.set({ delay: 21600000 });
-	//alertify.error("<iframe src=\"" + url + "\" frameborder=\"0\" scrolling=\"yes\" allowtransparency=\"true\" height=\"400px\"></iframe>");
-	//alertify.log("<iframe src=\"" + url + "\" frameborder=\"0\" scrolling=\"yes\" allowtransparency=\"true\" height=\"400px\"></iframe>");
-    alertify.success("<iframe src=\"" + url + "\" frameborder=\"0\" scrolling=\"yes\" allowtransparency=\"true\" height=\"400px\"></iframe>");
+    alertify.log("<iframe src=\"" + url + "\" frameborder=\"0\" scrolling=\"yes\" allowtransparency=\"true\" height=\"400px\"></iframe>");
 	
 }

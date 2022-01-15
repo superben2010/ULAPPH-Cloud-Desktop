@@ -1,3 +1,5 @@
+//Enable/disable geolocation
+var isGeoEnabled = false;
 setInterval( function(){geoloc();}, 15000);
 var isActive = true;
 
@@ -46,6 +48,9 @@ function error(msg) {
 }
 
 function geoloc() {
+	if (isGeoEnabled == false) {
+		return;
+	}
 	if (isActive == false) {
 		return;
 	}

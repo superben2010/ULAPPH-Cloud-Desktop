@@ -94,8 +94,47 @@
 	</style>
   </head>
 
-  <body>
+  <body onload="speakFunc()">
     <h1 contenteditable="true">{{.STR_FILLER1}}</h1>
+	<script>
+		function speakFunc() {
+			//parse URL values
+			var urlParams;
+			var match,
+					pl     = /\+/g,  // Regex for replacing addition symbol with a space
+					search = /([^&=]+)=?([^&]*)/g,
+					decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+					query  = window.location.search.substring(1);
+
+			urlParams = {};
+			while (match = search.exec(query))
+			   urlParams[decode(match[1])] = decode(match[2]);
+			
+			if (urlParams["SPEAK"] == "Y") {
+				//speak after 5seconds
+				setTimeout(function(){speakMessage('{{.STR_FILLER1}}');},5000);
+			}
+			function speakMessage(thisMsg){	
+				if (('speechSynthesis' in window) || ('SpeechRecognition' in window)) {
+					//if message has >>> read only the left text
+					var str = thisMsg;
+					var n = str.indexOf(">>>");
+					if (n > 0) {
+						var res = str.split(">>>");
+						if (res.length > 0) {
+							thisMsg = res[0];
+						}		
+					}
+
+					var msg = new SpeechSynthesisUtterance();
+					msg.rate = 1;
+					msg.pitch = 1;
+					msg.text = thisMsg;
+					window.speechSynthesis.speak(msg);
+				}
+			}
+		}
+	</script>
   </body>
 </html>
 

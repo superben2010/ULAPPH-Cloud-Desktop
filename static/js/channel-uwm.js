@@ -2,6 +2,7 @@
 var DEBUG = document.getElementById("debug").value;
 var aUser = document.getElementById("aUser");
 var thisUser = aUser.value;
+var friendlyName = "";
 var thisGrp = document.getElementById("ugrp").value;
 var tok = document.getElementById("tok");
 var da = document.getElementById("dispAds");
@@ -9,6 +10,7 @@ var ss = document.getElementById("soundStat");
 var rm = document.getElementById("ranMusic");
 var uwms = document.getElementById("uwms");
 var cctvs = document.getElementById("cctvstream");
+var speechRecog = document.getElementById("speechRecog");
 var isLocal = document.getElementById("isLocal");
 var FL_CONNECTED_OK = false;
 var FL_CONTENT_OK = false;
@@ -25,6 +27,18 @@ if (cctvs.value == "true" || cctvs.value == true) {
 	consoleLogger("Disabled cctv streaming");
 	alertify.log("Disabled cctv streaming");
 }
+//enable speech recognition by default
+if (speechRecog.value == "true" || speechRecog.value == true) {
+	consoleLogger("Enabled speech recognition");
+	alertify.log("Enabled speech recognition");
+	localStorage[root + 'quite-flag'] = "off";
+	//SpeechKITT.setInstructionsText('Talk...');
+} else {
+	consoleLogger("Disabled speech recognition");
+	alertify.log("Disabled speech recognition");
+	localStorage[root + 'quite-flag'] = "on";
+	//SpeechKITT.setInstructionsText('Quiet...');
+}
 var isSafari = Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0;
     // Internet Explorer 6-11
 var isIE = /*@cc_on!@*/false || !!document.documentMode;
@@ -33,10 +47,12 @@ var isEdge = !isIE && !!window.StyleMedia;
 
 window.onfocus = function () { 
   isActive = true; 
+  localStorage[root + 'quite-flag'] = "off";
 }; 
 
 window.onblur = function () { 
   isActive = false; 
+  localStorage[root + 'quite-flag'] = "on";
 }; 
 
 //clear ls
@@ -47,6 +63,7 @@ channelConnect();
 
 function channelConnect() {
 		alertify.success("Connecting to channel...");
+		friendlyName = emailToName(thisUser,"");
 		soundNow();
 };
 
@@ -250,12 +267,22 @@ function procMessage(obj) {
 			case "SYS_ROUTE_AGENT":
 				break;
 			case "SYS_RC_PLAY_MUSIC":
-                                alertifyThis("Playing music...");
-                                var mid = cmdata[3];
-                                playMusic(mid);
-                                break;
+				alertifyThis("Playing music...");
+				var mid = cmdata[3];
+				playMusic(mid);
+				break;
 			
 			case "SYS_OPEN_WINDOW":
+				if (document.hidden) {
+					return;
+				}
+				if (localStorage[root + 'quite-flag'] == "on") {
+					alertify.set({
+						delay: 30000
+					});
+					alertify.error("Sys open window skipped... quite mode is on.");
+					return
+				}
 				if (cmdata[3] == "" || cmdata[3] == undefined) {
 					var thisLink = root + "/tools?FUNC=WIDGET&t=MiniBrowserGet";
 					//openWindow(thisLink, cmdata[2]);
@@ -276,6 +303,16 @@ function procMessage(obj) {
 			//D0066
 			case "SYS_STRUWM_MIRROR":
 				consoleLogger("SYS_STRUWM_MIRROR");
+				if (document.hidden) {
+					return;
+				}
+				if (localStorage[root + 'quite-flag'] == "on") {
+					alertify.set({
+						delay: 30000
+					});
+					alertify.error("Sys struwm mirror skipped... quite mode is on.");
+					return
+				}
 				var src = cmdata[3];
 				//var cap = cmdata[4];
 				consoleLogger(src);
@@ -288,6 +325,16 @@ function procMessage(obj) {
 			//D0083
 			case "SYS_STRUWM_DESKTOP":
 				consoleLogger("SYS_STRUWM_DESKTOP");
+				if (document.hidden) {
+					return;
+				}
+				if (localStorage[root + 'quite-flag'] == "on") {
+					alertify.set({
+						delay: 30000
+					});
+					alertify.error("Sys struwm desktop skipped... quite mode is on.");
+					return
+				}
 				var server = cmdata[3];
 				consoleLogger("server: "+server);
 				consoleLogger("root: "+root);
@@ -314,6 +361,7 @@ function procMessage(obj) {
 				consoleLogger("uwm: "+uwm);
                 var ttl = cmdata[6];
                 consoleLogger("ttl: "+ttl);
+				var ttlstamp = ttl + " [" + ts + "]";
                 //push to cctv stream
                 var ts = Math.round((new Date()).getTime() / 1000);
 				var thisItem = "";
@@ -332,13 +380,18 @@ function procMessage(obj) {
 				}
                 var cctvstream = localStorage[uwm+"cctv-stream-photos"];
                 var newEntry = thisItem + "@777@" + cctvstream;
+				var rn = document.getElementById("ranid");
                 //localStorage["cctv-stream-photos"] = newEntry;
                 if (ValidURL(src) == true && localStorage[root+'isStreaming'] == 'Y') {
-                    if (thisGrp == "GRP_ADMIN" || umatch >= 0) {
+                    if (thisGrp == "GRP_ADMIN" || umatch >= 0 && rn.value != "pause") {
                         localStorage[uwm+"cctv-stream-photos"] = newEntry;
                     }
-                    //document.getElementById('page').style.backgroundImage = "url(" + src + ")";
-					document.getElementById('page').style.backgroundImage = "url(" + bgUrl + ")";
+					if (rn.value != "pause") {
+						//document.getElementById('page').style.backgroundImage = "url(" + src + ")";
+						document.getElementById('page').style.backgroundImage = "url(" + bgUrl + ")";
+						SpeechKITT.setInstructionsText('');
+						SpeechKITT.setSampleCommands(ttlstamp);
+					}
                     if (urlParams["toolbar"] == "cctv") {
                         var d = new Date();
                         var tLink = "/media?FUNC_CODE=VIEW_THUMBS&PROC=Y&RECENT=100&cont_type=TDSMEDIA&cont_cat=desktop" + cmdata[4] + "&cat_name=" + src;
@@ -348,9 +401,13 @@ function procMessage(obj) {
                     if (localStorage[root+'isStreaming'] == 'Y') {
                         var n = src.indexOf(thisUser+"/TDSMEDIA/CCTV");
                         if (thisGrp == "GRP_ADMIN" || n > 0 || umatch >= 0) {
-                            localStorage[uwm+"cctv-stream-photos"] = newEntry;
-                            //document.getElementById('page').style.backgroundImage = "url(" + src + ")";
-							document.getElementById('page').style.backgroundImage = "url(" + bgUrl + ")";
+							if (rn.value != "pause") {
+								localStorage[uwm+"cctv-stream-photos"] = newEntry;
+								//document.getElementById('page').style.backgroundImage = "url(" + src + ")";
+								document.getElementById('page').style.backgroundImage = "url(" + bgUrl + ")";
+								SpeechKITT.setInstructionsText('');
+								SpeechKITT.setSampleCommands(ttlstamp);
+							}
                         }
                     }
                 }
@@ -358,6 +415,16 @@ function procMessage(obj) {
 			//D0071
 			case "SYS_STRUWM_ALARM":
 			consoleLogger("SYS_STRUWM_ALARM");
+			if (document.hidden) {
+				return;
+			}
+			if (localStorage[root + 'quite-flag'] == "on") {
+				alertify.set({
+					delay: 30000
+				});
+				alertify.error("Sys struwm alarm skipped... quite mode is on.");
+				return
+			}
 			//data := fmt.Sprintf("@888@ULAPPH-SYS-UPD@888@SYS_STRUWM_ALARM@888@%v@888@%v", CAPTION, MESSAGE
 				var caption = cmdata[3];
 				var message = cmdata[4];
@@ -389,6 +456,29 @@ function procMessage(obj) {
                                 document.getElementById("ping-res").innerHTML = "<img src='/static/img/sysinf.gif' width='20' height='20' align='middle'></img>Alert";
                                 //titleBlink("Alert",caption);
                                 return;
+								
+			case "SYS_STRUWM_BATTERY_BCAST":
+				consoleLogger("SYS_STRUWM_BATTERY_BCAST");
+				if (document.hidden) {
+					return;
+				}
+				if (localStorage[root + 'quite-flag'] == "on") {
+					alertify.set({
+						delay: 30000
+					});
+					alertify.error("Sys batt broadcast skipped... quite mode is on.");
+					return
+				}
+				var devID = cmdata[3];
+				var devMsg = cmdata[4];
+				consoleLogger("devID: "+devID);
+				consoleLogger("devMsg: "+devMsg);
+				if (devID == "" || devID == undefined || devMsg == "" || devMsg == undefined) {
+					//do nothing
+				} else {
+					alertify.error(devMsg);
+				}
+				break;
 
 			case "SYS_GOOGLE_SEARCH":
 				var kw = cmdata[3];
@@ -424,7 +514,48 @@ function procMessage(obj) {
 				}
 				alertify.error("System sound preference updated to " + cmdata[3], "", 0);
 				break;
-
+			case "swiperight":
+				console.log("swiperight");
+				if (localStorage[root+"news"] == "on") {
+					stopTalking();
+					funcshow();
+				} else if (localStorage[root+'isStreaming'] == 'Y') {
+					scanCctvStream("R");
+				} else {
+					nextWp();
+				}
+				break;
+			case "swipeleft":
+				console.log("swipeleft");
+				if (localStorage[root+"news"] == "on") {
+					stopTalking();
+					funcshow();
+				} else if (localStorage[root+'isStreaming'] == 'Y') {
+					scanCctvStream("L");
+				} else {
+					nextWp();
+				}
+				break;
+			case "swipeup":
+				console.log("swipeup");
+				if (localStorage[root+"news"] == "on") {
+					selectRandomDesktop();
+				} else if (localStorage[root+'isStreaming'] == 'Y') {
+					scanCctvStream("C");
+				} else {
+					nextWp();
+				}
+				break;
+			case "swipedown":
+				console.log("swipedown");
+				if (localStorage[root+"news"] == "on") {
+					selectRandomDesktop();
+				} else if (localStorage[root+'isStreaming'] == 'Y') {
+					scanCctvStream("O");
+				} else {
+					nextWp();
+				}
+				break;
 			default:
 				var OL = res.split("@888@");
 				var tgt = OL[3];
@@ -661,7 +792,7 @@ function procMessage(obj) {
 				id: 'alert',
 				volume: 50,
 				//url: root + "/static/audio/emergency030.ogg"
-				url: root + "/static/audio/emergency030.mp3"
+				url: root + "/static/audio/emergency030.wav"
 			});
 			playSound('alert');
 		}
@@ -1000,7 +1131,7 @@ function newJSWMWindow() {
 		}
 	}
 	
-	var jswmstr = "'" + tgt + "', 800, 500, 'left', 'top', {title: '" + tgt + "', icon: '/static/img/jswm-web.png'}";
+	var jswmstr = "'" + tgt + "', 800, 500, 'right', 'top', {title: '" + tgt + "', icon: '/static/img/jswm-web.png'}";
 	eval('windowManager.openURI(' + jswmstr + ');');
 	
 	var aSound = document.createElement('audio');
@@ -1023,6 +1154,23 @@ function newJSWMWindow() {
 	}
 	return;
 	
+}	
+var aiInit = "U";
+var aiSession = 0;
+function openChatWithUserID(origURL) {
+	aiSession = aiSession + 1;
+	var aUser = document.getElementById("aUser").value;
+	var compAiSession = "-session-" + aiInit + aiSession;
+	var uid = aUser + compAiSession;
+	var thisColor1 = document.getElementById("startColor").value;
+	var color1 = thisColor1.replace("#", "");
+	var thisColor2 = document.getElementById("activeColor").value;
+	var color2 = thisColor2.replace("#", "");
+	var n = origURL.indexOf("?");
+	var str = origURL;
+	if (n > 0) { str = str+"&UID="+uid+"&uid="+uid+"&color1="+color1+"&color2="+color2; } else {str = str+"?UID="+uid+"&uid="+uid+"&color1="+color1+"&color2="+color2;}
+	//window.open(str, compAiSession);
+	openDrop(str);
 }
 function newBotMessage(msg) {
 	stopTalking();
@@ -1034,10 +1182,7 @@ function newBotMessage(msg) {
 		tgt = document.getElementById("newJSWM").value;
 	}
 	SpeechKITT.queryWatsonAssistant(tgt);
-	//setTimeout(function() {setInactiveListener();}, 60000);
-	//var numID = localStorage[root+'newBotMessage'+'xref'];
-	//document.getElementById("newJSWM"+numID).value = tgt;
-	alertify.success("You said: "+msg);
+	alertify.success("You said: "+tgt);
 	if (localStorage[root + 'quite-flag'] == "on") {
 		alertify.set({
 			delay: 60000
@@ -1095,7 +1240,7 @@ function clearWindows() {
 //Opens window w/o checking
 function openWindowNow(tgt, ttl) {
 
-	var jswmstr = "'" + tgt + "', 800, 500, 'left', 'top', {title: '" + ttl + "', icon: '/static/img/jswm-web.png'}";
+	var jswmstr = "'" + tgt + "', 800, 500, 'right', 'top', {title: '" + ttl + "', icon: '/static/img/jswm-web.png'}";
 	//consoleLogger(jswmstr);
 	eval('windowManager.openURI(' + jswmstr + ');');
 	
@@ -1120,7 +1265,7 @@ function openWindowNow(tgt, ttl) {
 }
 
 function openWindow(tgt, ttl) {
-	if (ttl == "SYS_RC_YT_SEARCH" || ttl == "SYS_RC_YT_SEARCH_ID" || ttl == "SYS_RC_YT_SEARCH_ID2" || ttl == "SYS_STRUWM_CAPTURE") {
+	if (ttl == "SYS_RC_YT_SEARCH" || ttl == "SYS_RC_YT_SEARCH_ID" || ttl == "SYS_RC_YT_SEARCH_ID2" || ttl == "SYS_STRUWM_CAPTURE" || ttl == "SYS_STRUWM_BATTERY_GET") {
 		return;
 	}
 
@@ -1174,7 +1319,7 @@ function openWindow(tgt, ttl) {
 		}
 	}
 	
-	var jswmstr = "'" + tgt + "', 800, 500, 'left', 'top', {title: '" + ttl + "', icon: '/static/img/jswm-web.png'}";
+	var jswmstr = "'" + tgt + "', 800, 500, 'right', 'top', {title: '" + ttl + "', icon: '/static/img/jswm-web.png'}";
 	//consoleLogger(jswmstr);
 	eval('windowManager.openURI(' + jswmstr + ');');
 	
@@ -1396,7 +1541,8 @@ window.addEventListener('message', function(e) {
     consoleLogger('origin:  ',e.origin);
     consoleLogger('root:  ',root);
     consoleLogger('parent received message!:  ',e.data);
-    var origin = e.originalEvent.origin || e.origin;
+    //var origin = e.originalEvent.origin || e.origin;
+	var origin = e.origin;
 	if ( origin !== root ) {
         consoleLogger('Origin and root does not match!');
 		return;
@@ -1410,6 +1556,16 @@ window.addEventListener('message', function(e) {
 		if (cmdata.length >= 2) {
 			switch (cmdata[1]) {
                 case "SYS_OPEN_WINDOW":
+					if (document.hidden) {
+						return;
+					}
+					if (localStorage[root + 'quite-flag'] == "on") {
+						alertify.set({
+							delay: 30000
+						});
+						alertify.error("Sys open window skipped... quite mode is on.");
+						return
+					}
                     //var cmdata = str.split("@888@");
                     if (cmdata[2] == "" || cmdata[2] == undefined) {
                         var thisLink = root + "/tools?FUNC=WIDGET&t=MiniBrowserGet";
@@ -1426,6 +1582,16 @@ window.addEventListener('message', function(e) {
                     }
                     break;
 				case "EDIT_WINDOWS_SUBUWM":
+					if (document.hidden) {
+						return;
+					}
+					if (localStorage[root + 'quite-flag'] == "on") {
+						alertify.set({
+							delay: 30000
+						});
+						alertify.error("Sys windows subuwm skipped... quite mode is on.");
+						return
+					}
 					var duser = document.getElementById("aUser").value;
 					var rex = duser.split("---");
 					if (rex.length == 2) {
@@ -1519,7 +1685,10 @@ function drop(evt) {
 			var url = imgs[0].getAttribute("src");
 			consoleLogger("url: "+url);
 			setbg(url);
-			pauseWp();
+			//pauseWp();
+			//update hidden value ranval
+			var rn = document.getElementById("ranid")
+			rn.value = "pause";
 			return;
 		}
 	}
@@ -1554,6 +1723,8 @@ function drop(evt) {
 				  reader.onload = function (event) {
 					consoleLogger(event.target);
 					document.getElementById('page').style.backgroundImage = "url(" + event.target.result + ")";
+					var rn = document.getElementById("ranid")
+					rn.value = "pause";
 				  };
 				  consoleLogger(file);
 				  reader.readAsDataURL(file);
@@ -1609,8 +1780,10 @@ function drop(evt) {
 }
 function openDrop(url) {
 	consoleLogger("openDrop: "+url);
-	var w = window.innerWidth;
-	var h = window.innerHeight-20;
+	//var w = window.innerWidth;
+	//var h = window.innerHeight-20;
+	var w = 800;
+	var h = 500;
 	var res = url.replace("http://", "https://");
 	var jswmstr = "'" + res + "', w, h, 'left', 'top', {title: '" + res + "', icon: '/static/img/jswm-web.png'}";
 	//consoleLogger(jswmstr);
@@ -1622,6 +1795,21 @@ function openDropSmall(url) {
 	var h = 500;
 	var res = url.replace("http://", "https://");
 	var jswmstr = "'" + res + "', w, h, 'left', 'top', {title: '" + res + "', icon: '/static/img/jswm-web.png'}";
+	//consoleLogger(jswmstr);
+	eval('windowManager.openURI(' + jswmstr + ');');
+	return;
+}
+function openAceEditor(m) {
+	var w = 800;
+	var h = 500;
+	var Base64={_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",encode:function(e){var t="";var n,r,i,s,o,u,a;var f=0;e=Base64._utf8_encode(e);while(f<e.length){n=e.charCodeAt(f++);r=e.charCodeAt(f++);i=e.charCodeAt(f++);s=n>>2;o=(n&3)<<4|r>>4;u=(r&15)<<2|i>>6;a=i&63;if(isNaN(r)){u=a=64}else if(isNaN(i)){a=64}t=t+this._keyStr.charAt(s)+this._keyStr.charAt(o)+this._keyStr.charAt(u)+this._keyStr.charAt(a)}return t},decode:function(e){var t="";var n,r,i;var s,o,u,a;var f=0;e=e.replace(/[^A-Za-z0-9\+\/\=]/g,"");while(f<e.length){s=this._keyStr.indexOf(e.charAt(f++));o=this._keyStr.indexOf(e.charAt(f++));u=this._keyStr.indexOf(e.charAt(f++));a=this._keyStr.indexOf(e.charAt(f++));n=s<<2|o>>4;r=(o&15)<<4|u>>2;i=(u&3)<<6|a;t=t+String.fromCharCode(n);if(u!=64){t=t+String.fromCharCode(r)}if(a!=64){t=t+String.fromCharCode(i)}}t=Base64._utf8_decode(t);return t},_utf8_encode:function(e){e=e.replace(/\r\n/g,"\n");var t="";for(var n=0;n<e.length;n++){var r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r)}else if(r>127&&r<2048){t+=String.fromCharCode(r>>6|192);t+=String.fromCharCode(r&63|128)}else{t+=String.fromCharCode(r>>12|224);t+=String.fromCharCode(r>>6&63|128);t+=String.fromCharCode(r&63|128)}}return t},_utf8_decode:function(e){var t="";var n=0;var r=c1=c2=0;while(n<e.length){r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r);n++}else if(r>191&&r<224){c2=e.charCodeAt(n+1);t+=String.fromCharCode((r&31)<<6|c2&63);n+=2}else{c2=e.charCodeAt(n+1);c3=e.charCodeAt(n+2);t+=String.fromCharCode((r&15)<<12|(c2&63)<<6|c3&63);n+=3}}return t}};
+	var rawStr = unescape(m);
+	var temp = document.createElement("div");
+	temp.innerHTML = rawStr;
+	var sanitized = temp.textContent || temp.innerText;
+	var encodedString = Base64.encode(sanitized);
+	var url = root + "/editor?EDIT_FUNC=ACE-LOCAL&SID=STATIC&TEXT="+encodedString;
+	var jswmstr = "'" + url + "', w, h, 'left', 'top', {title: '" + url + "', icon: '/static/img/jswm-web.png'}";
 	//consoleLogger(jswmstr);
 	eval('windowManager.openURI(' + jswmstr + ');');
 	return;
@@ -1686,11 +1874,105 @@ function resizeFunc() {
     txt += "<p>outerHeight: " + window.outerHeight + "</p>";
 	var screenSize = window.innerWidth;
 
-	if (window.innerHeight <= 600 || window.innerWidth <= 500) {
+	if (window.innerHeight <= 600 || window.innerWidth <= 600) {
 		//window is so small, we cant open widgets in uwm
 		localStorage[root+'isScreenSmall'] = 'Y';
+		var dispMode = "none";
+		//hide menu icons
+		var x = document.getElementById("menu-dx");
+			x.style.display = dispMode;
+		//#menu > ul > li:nth-child(3)
+		var el3 = document.body.querySelector("#menu > ul > li:nth-child(3)");
+			el3.style.display = dispMode;
+		//#menu > ul > li:nth-child(4)
+		var el4 = document.body.querySelector("#menu > ul > li:nth-child(4)");
+			el4.style.display = dispMode;
+		//#menu > ul > li:nth-child(5)
+		var el5 = document.body.querySelector("#menu > ul > li:nth-child(5)");
+			el5.style.display = dispMode;
+		//#menu > ul > li:nth-child(6)
+		var el6 = document.body.querySelector("#menu > ul > li:nth-child(6)");
+			el6.style.display = dispMode;
+		//#menu > ul > li:nth-child(7)
+		var el7 = document.body.querySelector("#menu > ul > li:nth-child(7)");
+			el7.style.display = dispMode;
+		//#menu > ul > li:nth-child(8)
+		var el8 = document.body.querySelector("#menu > ul > li:nth-child(8)");
+			el8.style.display = dispMode;
+		//#menu > ul > li:nth-child(9)
+		var el9 = document.body.querySelector("#menu > ul > li:nth-child(9)");
+			el9.style.display = dispMode;
+		//#menu > ul > li:nth-child(10)
+		var el10 = document.body.querySelector("#menu > ul > li:nth-child(10)");
+			el10.style.display = dispMode;
+
 	} else {
 		localStorage[root+'isScreenSmall'] = 'N';
+		var dispMode = "block";
+		//hide menu icons
+		var x = document.getElementById("menu-dx");
+			x.style.display = dispMode;
+		//#menu > ul > li:nth-child(3)
+		var el3 = document.body.querySelector("#menu > ul > li:nth-child(3)");
+			el3.style.display = dispMode;
+		//#menu > ul > li:nth-child(4)
+		var el4 = document.body.querySelector("#menu > ul > li:nth-child(4)");
+			el4.style.display = dispMode;
+		//#menu > ul > li:nth-child(5)
+		var el5 = document.body.querySelector("#menu > ul > li:nth-child(5)");
+			el5.style.display = dispMode;
+		//#menu > ul > li:nth-child(6)
+		var el6 = document.body.querySelector("#menu > ul > li:nth-child(6)");
+			el6.style.display = dispMode;
+		//#menu > ul > li:nth-child(7)
+		var el7 = document.body.querySelector("#menu > ul > li:nth-child(7)");
+			el7.style.display = dispMode;
+		//#menu > ul > li:nth-child(8)
+		var el8 = document.body.querySelector("#menu > ul > li:nth-child(8)");
+			el8.style.display = dispMode;
+		//#menu > ul > li:nth-child(9)
+		var el9 = document.body.querySelector("#menu > ul > li:nth-child(9)");
+			el9.style.display = dispMode;
+		//#menu > ul > li:nth-child(10)
+		var el10 = document.body.querySelector("#menu > ul > li:nth-child(10)");
+			el10.style.display = dispMode;
 	}
 	alertifyThis(txt);
+}
+
+function playSoundEmergency() {
+	if (isEdge == true || isIE == true || isSafari == true) {
+		soundManager.createSound({
+			id: 'emergency',
+			volume: 50,
+			url: root + "/static/audio/emergency030.mp3"
+		});
+		playSound('emergency');
+	} else {	
+		soundManager.createSound({
+			id: 'emergency',
+			volume: 50,
+			//url: root + "/static/audio/emergency030.ogg"
+			url: root + "/static/audio/emergency030.wav"
+		});
+		playSound('emergency');
+	}
+}
+
+function openLinkWithUserID(origURL) {
+	var uid = document.getElementById("aUser").value;
+	var n = origURL.indexOf("?");
+	var str = origURL;
+	if (n > 0) { str = str+"&UID="+uid+"&uid="+uid; } else {str = str+"?UID="+uid+"&uid="+uid;}
+	window.open(str, origURL);
+}
+
+function removeIconsBar() {
+	console.log("removeIconsBar()");
+	document.getElementsByClassName("icon-bar")[0].style.display = "none";
+}
+
+function showIconsBar() {
+	console.log("showIconsBar()");
+	document.getElementsByClassName("icon-bar")[0].style.display = "block";
 }

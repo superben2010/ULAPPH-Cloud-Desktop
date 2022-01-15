@@ -12,6 +12,7 @@
   letter-spacing: .5px;
   margin: 0 0 2px 0;
   max-width: 65%;
+  max-width: 90%;
   float: none;
   clear: both;
   line-height: 1.5em;
@@ -39,10 +40,11 @@
 
 /* style media that's inside bubbles */
 .bubble .bubble-content img {
-  /*width: calc(100% + 32px);*/
-  /*margin: -8px -16px;*/
+  width: calc(100% + 200px);
+  height: calc(100% + 200px);
+  margin: -8px -16px;
   overflow: hidden;
-  /*display: block;*/
+  display: block;
   border-radius: 5px 15px 15px 15px;
 }
 

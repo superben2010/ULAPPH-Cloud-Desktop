@@ -177,8 +177,10 @@ go get "github.com/mailjet/mailjet-apiv3-go"
 echo "github.com/boltdb/bolt"
 go get "github.com/boltdb/bolt"
 
-echo "github.com/go-redis/redis"
-go get "github.com/go-redis/redis"
+#echo "github.com/go-redis/redis"
+#go get "github.com/go-redis/redis"
+echo "github.com/edwindvinas/redis"
+go get "github.com/edwindvinas/redis"
 
 # upgrade go112 changes
 #go get "google.golang.org/appengine/datastore"
@@ -200,13 +202,16 @@ go get "github.com/nsqio/go-nsq"
 echo "github.com/tidwall/pretty"
 go get "github.com/tidwall/pretty"
 
+echo "github.com/IBM/go-sdk-core"
+go get "github.com/IBM/go-sdk-core"
+
 echo "Fix some dependencies..."
 GOPATH=${GOPATH}
 mkdir $GOPATH/src/github.com/tdewolff/minify/v2
 mv $GOPATH/src/github.com/tdewolff/minify/* $GOPATH/src/github.com/tdewolff/minify/v2/
 
-mkdir $GOPATH/src/github.com/go-redis/redis/v7
-mv $GOPATH/src/github.com/go-redis/redis/* $GOPATH/src/github.com/go-redis/redis/v7/
+mkdir $GOPATH/src/github.com/edwindvinas/redis/v7
+mv $GOPATH/src/github.com/edwindvinas/redis/* $GOPATH/src/github.com/edwindvinas/redis/v7/
 
 echo "you may ignore mv errors..."
 echo "done!"

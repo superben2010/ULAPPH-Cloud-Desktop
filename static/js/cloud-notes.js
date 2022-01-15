@@ -1,3 +1,5 @@
+//note id ctr
+var noteCtr = 0;
 var ea = document.getElementById("aUser");
 var ed = document.getElementById("desktop");
 var ss = document.getElementById("soundStat");
@@ -6,7 +8,11 @@ var thisDesktop = ed.value;
 var eh = document.getElementById("host");  
 var em = document.getElementById("mode");
 var sn = document.getElementById("snm");
-var isLocal = document.getElementById("isLocal");  
+var isLocal = document.getElementById("isLocal"); 
+var isNotesLoaded = false;
+var customNotesMediaID = parseInt(document.getElementById("notesrc").value);
+var customNotesTable = "WebKitStickyNotes_" + customNotesMediaID;
+consoleLogger("customNotesTable: "+customNotesTable); 
 //var dbName = eh.value +  "-" + ea.value;
 var res = ea.value;
 var SPL = res.split("---");
@@ -38,6 +44,7 @@ localStorage['highestId' + thisDesktop] = 0;
 
 function Note()
 {
+	consoleLogger("Note()"); 
 	var self = this;
 
 	var note = document.createElement('div');
@@ -151,7 +158,7 @@ Note.prototype = {
 		var note = this;
 		db.transaction(function(tx)
 		{
-			tx.executeSql("DELETE FROM WebKitStickyNotes WHERE timestamp = ?", [note.timestamp]);
+			tx.executeSql("DELETE FROM " + customNotesTable + " WHERE timestamp = ?", [note.timestamp]);
 			alertify.log("Successful delete: " + note.desktop + "-" + note.id);
 		});
 		
@@ -196,7 +203,7 @@ Note.prototype = {
 		var note = this;
 		db.transaction(function (tx)
 		{
-			tx.executeSql("UPDATE WebKitStickyNotes SET desktop = ?, note = ?, timestamp = ?, left = ?, top = ?, zindex = ? WHERE id = ? and desktop = ?", [note.desktop, note.text, note.timestamp, note.left, note.top, note.zIndex, note.id, note.desktop]);
+			tx.executeSql("UPDATE " + customNotesTable + " SET desktop = ?, note = ?, timestamp = ?, left = ?, top = ?, zindex = ? WHERE id = ? and desktop = ?", [note.desktop, note.text, note.timestamp, note.left, note.top, note.zIndex, note.id, note.desktop]);
 			FL_UPDATE = true;
 		});
 		
@@ -209,7 +216,7 @@ Note.prototype = {
 		var note = this;
 		db.transaction(function (tx) 
 		{
-			tx.executeSql("INSERT INTO WebKitStickyNotes (id, desktop, note, timestamp, left, top, zindex) VALUES (?, ?, ?, ?, ?, ?, ?)", [note.id, note.desktop, note.text, note.timestamp, note.left, note.top, note.zIndex]);
+			tx.executeSql("INSERT INTO " + customNotesTable + " (id, desktop, note, timestamp, left, top, zindex) VALUES (?, ?, ?, ?, ?, ?, ?)", [note.id, note.desktop, note.text, note.timestamp, note.left, note.top, note.zIndex]);
 			alertify.log("Successful insert: " + note.desktop + "-" + note.id);
 		}); 
 	},
@@ -270,8 +277,13 @@ Note.prototype = {
 
 function loaded()
 {
+	if (isNotesLoaded == true) {
+		return;
+	}
+	consoleLogger("loaded(): isNotesLoaded="+isNotesLoaded);
 	db.transaction(function(tx) {
-		tx.executeSql("SELECT COUNT(*) FROM WebkitStickyNotes", [], function(result) {
+		tx.executeSql("SELECT COUNT(*) FROM " + customNotesTable, [], function(result) {
+			consoleLogger("SELECT COUNT(*) FROM " + customNotesTable); 
 			//if (isLocal.value == "false" || isLocal.value == false) {
 				deleteNotes();
 			//}
@@ -287,9 +299,11 @@ function loaded()
 			//}
 			selectNotes();
 			//loadNotes();
+			isNotesLoaded = true;
 
 		}, function(tx, error) {
-			tx.executeSql("CREATE TABLE WebKitStickyNotes (id REAL, desktop TEXT, note TEXT, timestamp REAL, left TEXT, top TEXT, zindex REAL)", [], function(result) { 
+			tx.executeSql("CREATE TABLE " + customNotesTable + " (id REAL, desktop TEXT, note TEXT, timestamp REAL, left TEXT, top TEXT, zindex REAL)", [], function(result) {
+				consoleLogger("CREATE TABLE " + customNotesTable);
 				//if (isLocal.value == false) {
 					deleteNotes();
 				//}
@@ -305,6 +319,7 @@ function loaded()
 				//}
 				selectNotes();
 				//loadNotes();
+				isNotesLoaded = true;
 			});
 		});
 	});
@@ -313,13 +328,17 @@ function loaded()
 
 function loadNotes()
 {
+	consoleLogger("loadNotes()");
 	db.transaction(function(tx) {
 		var thisDesktop = document.getElementById("desktop").value;
-		tx.executeSql("SELECT id, desktop, note, timestamp, left, top, zindex FROM WebKitStickyNotes WHERE desktop = ?", [thisDesktop], function(tx, result) {
+		tx.executeSql("SELECT id, desktop, note, timestamp, left, top, zindex FROM " + customNotesTable + " WHERE desktop = ?", [thisDesktop], function(tx, result) {
+			consoleLogger("SELECT id, desktop, note, timestamp, left, top, zindex FROM " + customNotesTable);
 			for (var i = 0; i < result.rows.length; ++i) {
 				var row = result.rows.item(i);
 				var note = new Note();
-				note.id = row['id'];
+				//note.id = row['id'];
+				noteCtr = noteCtr + 1;
+				note.id = noteCtr;
 				note.desktop = row['desktop'];
 				note.text = row['note'];
 				note.timestamp = row['timestamp'];
@@ -343,9 +362,10 @@ function loadNotes()
 
 function selectNotes()
 {
+	consoleLogger("selectNotes()");
 	db.transaction(function(tx) {
 		var thisDesktop = document.getElementById("desktop").value;
-		tx.executeSql("SELECT COUNT(*) FROM WebkitStickyNotes", [], function(tx, result) {
+		tx.executeSql("SELECT COUNT(*) FROM " + customNotesTable, [], function(tx, result) {
 			consoleLogger("Current noted db contains "+result.rows.length+" items");
 		}, function(tx, error) {
 			alert('Failed to retrieve notes from database - ' + error.message);
@@ -354,8 +374,105 @@ function selectNotes()
 	});
 }
 
+function saveNotesToCloud()
+{
+	consoleLogger("saveNotesToCloud()");
+	alertify.log("Saving notes to cloud...");
+	db.transaction(function(tx) {
+		tx.executeSql("select * from " + customNotesTable, [], function(tx,results) {
+			var data = convertResults(results);
+			consoleLogger("data: "+data);
+			var dataUpload = {notes:data};
+			var serializedData = JSON.stringify(dataUpload);
+			//if text contains <img src='/static/img/top.png'> means important note !!!
+			var mNote = serializedData.replace("<img src='/static/img/top.png'>", "!!!");
+			mNote = mNote.replace("<img src='/static/img/in-progress.gif'>", "iii");
+			mNote = mNote.replace("<img src='/static/img/done.png'>", "ddd");
+			mNote = mNote.replace("<img src='/static/img/heart.png'>", "hhh");
+			mNote = mNote.replace("<img src='/static/img/idea.png'>", "ppp");
+			mNote = mNote.replace("<img src='/static/img/money.png'>", "mmm");
+			mNote = mNote.replace("<img src='/static/img/people.png'>", "fff");
+			mNote = mNote.replace("ttt", "<img src='/static/img/plane.png'>");
+			mNote = mNote.replace("ccc", "<img src='/static/img/car.png'>");
+			serializedData = mNote;
+			var mediaID = parseInt(document.getElementById("notesrc").value);
+			consoleLogger("mediaID: "+mediaID);
+			saveNotesData("TDSMEDIA-" + mediaID, serializedData);
+		});
+	});
+}
+
+function saveNotesData(SID, thisContent) {
+	consoleLogger("saveNotesData()");
+	console.log("Saving data... Please wait... This may take a while.");
+	
+	var xmlhttp;
+	if (window.XMLHttpRequest)
+	  {// code for IE7+, Firefox, Chrome, Opera, Safari
+	  xmlhttp=new XMLHttpRequest();
+	  }
+	else
+	  {// code for IE6, IE5
+	  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	  }
+
+	var notes_url = "";
+	notes_url = '/editor?EDIT_FUNC=GET_UP_URL&SID=' + SID;
+	xmlhttp.open("POST",notes_url,true);
+	xmlhttp.send();
+
+	 xmlhttp.onreadystatechange=function()
+	  {
+	  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+		{
+			var uploadURL = xmlhttp.responseText;
+			var formData = new FormData();
+
+			formData.append("EDIT_FUNC2", "SAVE_TEXT");
+			formData.append("SID", SID);
+			formData.append("FUNC_CODE", "UPD-FROM-EDITOR"); 
+
+			var blob = new Blob([thisContent], { type: "text/plain"});
+
+			formData.append("file", blob);
+
+			var request = new XMLHttpRequest();
+			request.open("POST", uploadURL);
+			request.send(formData);
+			 request.onreadystatechange=function()
+			  {
+			  if (request.readyState==4 && request.status==200)
+				{
+					var redirLink = request.responseText;
+					//window.location.assign(redirLink);
+					consoleLogger("notes saved ok");
+					alertify.success("Successfully saved to " + SID +".<br><a href=\"" + redirLink +"\" target=\"notesjson\">View JSON</a>");
+					return
+				}
+
+			 }
+		}
+		
+	}
+};
+
+function convertResults(resultset) {
+	consoleLogger("convertResults()");
+	var results = [];
+	for(var i=0,len=resultset.rows.length;i<len;i++) {
+		var row = resultset.rows.item(i);
+		var result = {};
+		for(var key in row) {
+			result[key] = row[key];
+		}
+		results.push(result);
+	}
+	return results;
+}
+
 function deleteNotes()
 {	
+	consoleLogger("deleteNotes()");
 	//delete only if the desktop is main
 	var deskID = document.getElementById("desktop").value;
 	consoleLogger("deskID: "+deskID);
@@ -367,7 +484,7 @@ function deleteNotes()
 	db.transaction(function(tx)
 	{	
 		consoleLogger("Deleting entries for all desktops");
-		tx.executeSql("DELETE FROM WebKitStickyNotes");
+		tx.executeSql("DELETE FROM " + customNotesTable);
 		alertify.log("Successful delete entries!");
 	});
 		
@@ -380,14 +497,16 @@ function modifiedString(date)
 
 function newNote()
 {
-	
+	consoleLogger("newNote()");
 	var ed = document.getElementById("desktop");
 	var thisDesktop = ed.value;
 	consoleLogger("thisDesktop: "+thisDesktop);
 	consoleLogger("highestId: "+localStorage['highestId' + thisDesktop]);
 	
 	var note = new Note();
-	note.id = parseInt(localStorage['highestId' + thisDesktop]) + 1;
+	//note.id = parseInt(localStorage['highestId' + thisDesktop]) + 1;
+	noteCtr = noteCtr + 1;
+	note.id = noteCtr;
 	localStorage['highestId' + thisDesktop] = note.id;
 	note.desktop = thisDesktop;
 	note.timestamp = new Date().getTime();
@@ -395,6 +514,8 @@ function newNote()
 	note.top = Math.round(Math.random() * 500) + 'px';
 	note.zIndex = parseInt(localStorage['highestZ-' + thisDesktop]) + 1;
 	//note.text = document.getElementsByClassName('edit')[0].innerHTML;
+	var sampleNote = "Here are sample tags: <img src='/static/img/top.png'>!!!<img src='/static/img/in-progress.gif'>iii<img src='/static/img/done.png'>ddd <img src='/static/img/heart.png'>hhh<img src='/static/img/idea.png'>ppp<img src='/static/img/money.png'>mmm<img src='/static/img/people.png'>fff<img src='/static/img/plane.png'>ttt<img src='/static/img/car.png'>car";	
+	note.text = sampleNote;
 	localStorage['highestZ-' + thisDesktop] = note.zIndex;
 	note.saveAsNew();
 	//sound
@@ -437,12 +558,13 @@ function newNoteMU(mText)
 {
 	var ed = document.getElementById("desktop");
 	var thisDesktop = ed.value;
-	
 	consoleLogger("thisDesktop: "+thisDesktop);
 	consoleLogger("highestId: "+localStorage['highestId' + thisDesktop]);
 	
 	var note = new Note();
-	note.id = pareInt(localStorage['highestId' + thisDesktop]) + 1;
+	//note.id = pareInt(localStorage['highestId' + thisDesktop]) + 1;
+	noteCtr = noteCtr + 1;
+	note.id = noteCtr;
 	localStorage['highestId' + thisDesktop] = note.id;
 	note.desktop = "desktop0";
 	note.text = mText
@@ -460,8 +582,9 @@ function syncNotes()
 	if (FL_UPDATE == false) {
 		return;
 	}
+	consoleLogger("syncNotes()");
 	db.transaction(function(tx) {
-		tx.executeSql("SELECT id, desktop, note, timestamp, left, top, zindex FROM WebKitStickyNotes", [], function(tx, result) {
+		tx.executeSql("SELECT id, desktop, note, timestamp, left, top, zindex FROM " + customNotesTable, [], function(tx, result) {
 			for (var i = 0; i < result.rows.length; ++i) {
 				var row = result.rows.item(i);
 	
@@ -510,6 +633,7 @@ function syncNotes()
 	});
 }
 function loadLocalNotes() {
+	consoleLogger("loadLocalNotes()");
 	//update uwmID
 	if (urlParams["u"] == undefined) {
 		document.getElementById("uwmID").outerHTML = "Desktop";
@@ -541,10 +665,24 @@ function loadLocalNotes() {
 				localStorage['highestId' + curDesk] = objJSON.notes[i].id;
 				localStorage['highestZ-' + curDesk] = objJSON.notes[i].zindex;
 				var note = new Note();
-				note.id = objJSON.notes[i].id;
+				//note.id = objJSON.notes[i].id;
+				noteCtr = noteCtr + 1;
+				note.id = noteCtr;
 				localStorage['highestId' + thisDesktop] = objJSON.notes[i].id;
 				note.desktop = objJSON.notes[i].desktop;
-				note.text = objJSON.notes[i].note;
+				//note.text = objJSON.notes[i].note;
+				var oNote = objJSON.notes[i].note;
+				//if text contains !!! means important note
+				var mNote = oNote.replace("!!!", "<img src='/static/img/top.png'>");
+				mNote = mNote.replace("iii", "<img src='/static/img/in-progress.gif'>");
+				mNote = mNote.replace("ddd", "<img src='/static/img/done.png'>");
+				mNote = mNote.replace("hhh", "<img src='/static/img/heart.png'>");
+				mNote = mNote.replace("ppp", "<img src='/static/img/idea.png'>");
+				mNote = mNote.replace("mmm", "<img src='/static/img/money.png'>");
+				mNote = mNote.replace("fff", "<img src='/static/img/people.png'>");
+				mNote = mNote.replace("ttt", "<img src='/static/img/plane.png'>");
+				mNote = mNote.replace("ccc", "<img src='/static/img/car.png'>");
+				note.text = mNote;
 				note.timestamp = objJSON.notes[i].timestamp;
 				note.left = objJSON.notes[i].left;
 				note.top = objJSON.notes[i].top;
@@ -558,4 +696,4 @@ function loadLocalNotes() {
 	}
 	localStorage["ready-notes-local-json"+thisDesktop] = "Y";
 }
-addEventListener('load', loaded, false); 
+//addEventListener('load', loaded, false); 

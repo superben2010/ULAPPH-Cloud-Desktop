@@ -1,6 +1,7 @@
 //D0090
 var dUwm = document.getElementById("desktop");
 var isMobile = document.getElementById("isMobile").value;
+var speechRecog = document.getElementById("speechRecog");
 // limit number of unknown intents
 var sorryCounter = 0;
 //holds watson orch details
@@ -20,14 +21,17 @@ if (annyang) {
         'hello': helloWorld,
         'hi': hiWorld,
 		'timezone': worldtimeBuddy,
+		'battery': showBatteryStatus,
+		'battery status': showBatteryStatus,
 		'tips': showTips,
 		'story': showStory,
+		'tell me a story': showStory,
         'start dictation': dictationStart,
         'stop dictation': dictationSave,
         'save dictation': dictationSave,
-		'cctv': cctvStream,
-        'cctv on': cctvStream,
-        'cctv off': cctvStream,
+		'capture': cctvCapture,
+		'cctv capture': cctvCapture,
+        'cctv stream': cctvStream,
 		'cctv review': cctvReview,
 		'cctv latest': cctvLatest,
 		'cctv oldest': cctvOldest,
@@ -41,9 +45,9 @@ if (annyang) {
         'show topic *sid': funcSetTopic,
         'cancel': stopTalking,
         'stop talking': stopTalking,
-        'quite': setQuiteMode,
-        'quite on': setQuiteMode,
-        'quite off': setQuiteMode,
+        'quiet': setQuietMode,
+        'quiet on': setQuietMode,
+        'quiet off': setQuietMode,
 		'note': newNote,
 		'sticky note': newNote,
 		'new note': newNote,
@@ -81,17 +85,25 @@ if (annyang) {
     // Render KITT's interface
     SpeechKITT.vroom();
 	
-	localStorage[root + 'quite-flag'] = "off";
+	//localStorage[root + 'quite-flag'] = "off";
 	localStorage[root + 'activelistener'] = 'on';
 	localStorage[root + 'speakingNow'] = 'N';
+	localStorage[root+'localspeak'] = 'N';
 	
 	alertify.log("Speech components loaded...");
 	//load shortcuts
 	alertify.set({
-		delay: 600000
+		delay: 120000
 	});
 	alertify.success("Welcome to Ulapph! For best experience, please use Chrome. <a href='https://github.com/edwindvinas/ULAPPH-Cloud-Desktop' target='welcome'>More info...</a>");
-	alertify.success("To enable voice recognition,  <a href='#' onClick=\"helloWorld();return false;\">click here</a> to test.");
+	
+	if (speechRecog.value == "true" || speechRecog.value == true) {
+		alertify.error("Speech Recognition is turned on. You can <a href='#' onClick=\"setQuietMode();return false;\">turn it off</a>.");
+	} else {
+		alertify.error("Speech Recognition is turned off. You can <a href='#' onClick=\"setQuietMode();return false;\">turn it on</a>.");
+	}
+	alertify.error("<a href='#' onClick=\"speak();return false;\" title=\"Click to test/enable speech\"><img src=\"/static/img/tts.png\" width=100 height=100></img></a>.");
+	
 	alertify.success("To share your camera, please select: <a href='#' onClick=\"openCameraS();return false;\">Small Camera</a> | <a href='#' onClick=\"openCameraB();return false;\">Big Camera</a>");
 	alertify.success("To open predefined shortcuts: <a href='#' onClick=\"loadShortcuts();return false;\">Open Shortcuts</a>");
 	//alertify.log("I'm an AI chatbot! Say hello or good morning or good afternoon or good evening to start the conversation. Have a nice day ahead!");
@@ -127,6 +139,9 @@ if (annyang) {
 		delay: 1000
 	});
 }
+function speak() {
+  speechSynthesis.speak(new SpeechSynthesisUtterance("hello world"));
+}
 function openCameraS() {
 	var thisLink = location.protocol + '//' + location.host + '/tools?FUNC=MIRROR2';
 	openWindow(thisLink,'Small Camera');
@@ -137,7 +152,7 @@ function openCameraB() {
 }
 function loadShortcuts() {
 	alertify.set({
-		delay: 600000
+		delay: 120000
 	});
 	//var thisMsg = "Quite mode has been turned on.";
 	//alertify.log(thisMsg);
@@ -196,7 +211,7 @@ function shuffle(array) {
 }
 function exploreWallpaper() {
 	alertify.set({
-		delay: 600000
+		delay: 120000
 	});
 	nextWp();
 	alertify.success("NEXT WALLPAPER: <a href='#' onClick=\"exploreWallpaper();return false;\">Next Wallpaper</a>");
@@ -206,7 +221,7 @@ function exploreWallpaper() {
 }
 function googleSearch() {
 	alertify.set({
-		delay: 600000
+		delay: 120000
 	});
 	openWindow("https://www.google.com", "Google");
 	alertify.success("GOOGLE SEARCH: <a href='#' onClick=\"googleSearch();return false;\">Google Search</a>");
@@ -217,7 +232,7 @@ function googleSearch() {
 }
 function bingSearch() {
 	alertify.set({
-		delay: 600000
+		delay: 120000
 	});
 	openWindow("https://www.bing.com", "Bing");
 	alertify.success("BING SEARCH: <a href='#' onClick=\"bingSearch();return false;\">Bing Search</a>");
@@ -228,7 +243,7 @@ function bingSearch() {
 }
 function baiduSearch() {
 	alertify.set({
-		delay: 600000
+		delay: 120000
 	});
 	openWindow("https://www.baidu.com", "Baidu");
 	alertify.success("BAIDU SEARCH: <a href='#' onClick=\"baiduSearch();return false;\">Baidu Search</a>");
@@ -239,7 +254,7 @@ function baiduSearch() {
 }
 function shoppingSearch() {
 	alertify.set({
-		delay: 600000
+		delay: 120000
 	});
 	openWindow("https://www.google.com/shopping", "Google Shopping");
 	alertify.success("SHOPPING SEARCH: <a href='#' onClick=\"shoppingSearch();return false;\">SHOPPING Search</a>");
@@ -250,7 +265,7 @@ function shoppingSearch() {
 }
 function bookSearch() {
 	alertify.set({
-		delay: 600000
+		delay: 120000
 	});
 	openWindow("https://books.google.com.ph/", "Google Books");
 	alertify.success("Books SEARCH: <a href='#' onClick=\"bookSearch();return false;\">Books Search</a>");
@@ -280,12 +295,26 @@ function helloWorld() {
 	}
     localStorage[root+'localspeak'] = 'Y';
     var thisMsg = "Hello world!";
+	if (friendlyName !== "" && friendlyName !== undefined) {
+		thisMsg = "Hello " + friendlyName + "!";
+	}
+	document.getElementById('page').style.backgroundImage = "url('/static/img/misc/airobot1.gif')";
 	//SpeechKITT.abortRecognition();
     speakMessage(thisMsg);
     //SpeechKITT.setInstructionsText('');
     //SpeechKITT.setSampleCommands([thisMsg]);
 	alertify.log(thisMsg);
 	//SpeechKITT.startRecognition();
+	var botFeatures = " You can ask me anything or you can talk directly to the following virtual assistants: (1) Google Cloud Platform bot -- just say Google; (2) Technology Architecture bot -- just say technology architecture; (3) Enterprise Architecture bot -- just say enterprise architecture. Thank you!";
+	speakMessage(thisMsg + botFeatures);
+	//alertify.log(thisMsg + botFeatures);
+	alertify.set({
+		delay: 120000
+	});	
+	alertify.success(botFeatures);
+	alertify.set({
+		delay: 1000
+	});
     localStorage[root+'localspeak'] = 'N';
 }
 function setInactiveListener() {
@@ -295,26 +324,28 @@ function setInactiveListener() {
     SpeechKITT.setInstructionsText('MicOff...');
     SpeechKITT.setSampleCommands(['ULAPPH', 'Cloud Desktop']);
 }
-function setQuiteMode() {
-	consoleLogger("setQuiteMode()");
+function setQuietMode() {
+	consoleLogger("setQuietMode()");
 	stopTalking();
 	if (localStorage[root + 'quite-flag'] == "on") {
-		var thisMsg = "Quite mode has been turned off.";
-		//document.getElementById('page').style.backgroundImage = "url('/static/img/LP_DeepField_NASA.gif')";
+		var thisMsg = "Quiet mode has been turned off.";
+		//document.getElementById('page').style.backgroundImage = "url('/static/img/misc/airobot2.gif')";
 		alertify.log(thisMsg);
 		speakMessage(thisMsg);
 		localStorage[root + 'quite-flag'] = "off";
+		localStorage[root+'localspeak'] = 'N';
 		SpeechKITT.setInstructionsText('Talk...');
-		//SpeechKITT.setSampleCommands(['ULAPPH', 'Cloud Desktop']);
+		SpeechKITT.setSampleCommands(['ULAPPH', 'is listening!']);
 	} else {
-		var thisMsg = "Quite mode has been turned on.";
-		//document.getElementById('page').style.backgroundImage = "url('/static/img/4World-Flags.jpg')";
+		var thisMsg = "Quiet mode has been turned on.";
+		//document.getElementById('page').style.backgroundImage = "url('/static/img/misc/airobot1.gif')";
 		alertify.log(thisMsg);
 		speakMessage(thisMsg);
 		localStorage[root + 'quite-flag'] = "on";
-		SpeechKITT.setInstructionsText('Quite...');
+		localStorage[root+'localspeak'] = 'Y';
+		SpeechKITT.setInstructionsText('Quiet...');
 		stopTalking();
-		//SpeechKITT.setSampleCommands(['ULAPPH', 'Cloud Desktop']);
+		SpeechKITT.setSampleCommands(['ULAPPH', 'is not listening!']);
 	}
 }
 function hiWorld() {
@@ -358,6 +389,29 @@ function newCountdownTimer() {
 		alertify.log(thisMsg);
 	}
 }
+function showBatteryStatus() {
+    localStorage[root+'localspeak'] = 'Y';
+    consoleLogger("showBatteryStatus()");
+	batteryLevel = localStorage[root+'batteryLevel'];
+	batteryCharging = localStorage[root+'batteryCharging'];
+    var thisMsg = "Hi "+ friendlyName + ", your current battery level is: " + batteryLevel + " percent.";
+	if (batteryCharging == "Y") {
+		thisMsg = thisMsg + " " + "Your charger is connected.";
+	} else {
+		thisMsg = thisMsg + " " + "You are NOT connected to the charger.";
+	}
+	var msg = new SpeechSynthesisUtterance;
+	SpeechKITT.abortRecognition();
+	msg.rate = 1, msg.pitch = 1, msg.text = thisMsg, window.speechSynthesis.speak(msg);
+	msg.onend = function() {
+		consoleLogger('Utterance has finished being spoken'+" "+"showBatteryStatus()");
+		//SpeechKITT.setInstructionsText('');
+		//SpeechKITT.setSampleCommands([thisMsg]);
+		SpeechKITT.startRecognition();
+		localStorage[root+'localspeak'] = 'N';
+		alertify.log(thisMsg);
+	}
+}
 function worldtimeBuddy() {
     localStorage[root+'localspeak'] = 'Y';
     consoleLogger("worldtimeBuddy()");
@@ -381,30 +435,25 @@ function worldtimeBuddy() {
 function newsLiveStream() {
     localStorage[root+'localspeak'] = 'Y';
     consoleLogger("newsLiveStream()");
-	setQuiteMode();
+	setQuietMode();
     var thisMsg = "Here are the live streams available showing news.";
 
 	var YID_SkyNews = "9Auq9mYxFEE";
 	var thisLink = "https://www.youtube.com/embed/" + YID_SkyNews + "?rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&autoplay=0"
 	openWindow(thisLink, "Livestream");	
 
-	thisLink = "https://www.youtube.com/results?search_query=livestream+news+dzmm+teleradyo";
-	openWindow(thisLink, "Livestream DZMM");	
+	thisLink = "https://www.youtube.com/embed/dVDpG3rR1VE" + "?rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&autoplay=0";
+	openWindow(thisLink, "NBC");	
 
-	thisLink = "https://www.youtube.com/results?search_query=livestream+news+asia";
-	openWindow(thisLink, "Livestream ASIA");	
+	thisLink = "https://www.youtube.com/embed/21X5lGlDOfg" + "?rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&autoplay=0";;
+	openWindow(thisLink, "NASA");	
 
 	thisLink = "https://www.worldometers.info/coronavirus/";
 	openWindow(thisLink, "Livestream");	
 
-	var YID_EuroNews = "6xrJy-1_qS4";
-	thisLink = "https://www.youtube.com/embed/" + YID_EuroNews + "?rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&autoplay=0"
-	openWindow(thisLink, "Livestream");	
-
-	//var YID_AlJazeera = "WisZM9CMlTo";
-	//thisLink = "https://www.youtube.com/embed/" + YID_AlJazeera + "?rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&autoplay=0"
-	thisLink = "https://www.youtube.com/results?search_query=livestream+news+today";
-	openWindow(thisLink, "Options");
+	thisLink = "https://www.youtube.com/embed/36YnV9STBqc"+ "?rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&rel=0&modestbranding=1&autohide=1&mute=1&showinfo=0&controls=1&autoplay=0"
+	openWindow(thisLink, "Music");	
+	
 	//rearrange
 	uwmArrWin();
     //speakMessage(thisMsg);
@@ -420,7 +469,7 @@ function newsLiveStream() {
 		alertify.log(thisMsg);
 	}
 	alertify.set({
-		delay: 600000
+		delay: 120000
 	});	
 	alertify.success("LIVE NEWS STOP: <a href='#' onClick=\"clearWindows();return false;\">Live Stream News Stop</a>");
 	alertify.set({
@@ -792,6 +841,26 @@ function cctvStream() {
     } else {
         localStorage[root+'isStreaming'] = 'Y';
         thisMsg = "CCTV Streaming has been turned on!";
+		alertify.log(thisMsg);
+    }
+	//SpeechKITT.abortRecognition();
+    speakMessage(thisMsg);
+    //SpeechKITT.setInstructionsText('');
+    //SpeechKITT.setSampleCommands([thisMsg]);
+    localStorage[root+'localspeak'] = 'N';
+	//SpeechKITT.startRecognition();
+}
+function cctvCapture() {
+    localStorage[root+'localspeak'] = 'Y';
+    consoleLogger("cctvCapture()");
+    var thisMsg = "";
+    if (localStorage[root+'isStreaming'] == 'Y') {
+        thisMsg = "CCTV capture being processed...";
+		var thisLink = location.protocol + '//' + location.host + '/directory?DIR_FUNC=cctv-capture';
+		openWindow(thisLink,'CCTV Capture');
+		alertify.log(thisMsg);
+    } else {
+        thisMsg = "CCTV capture not executed. Please enable cctv stream first.";
 		alertify.log(thisMsg);
     }
 	//SpeechKITT.abortRecognition();

@@ -8,7 +8,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- pwa manifest -->
-    <link rel="manifest" href="/static/chat-bubble/manifest.json?v=2">
+    <link rel="manifest" href="/static/chat-bubble/manifest.json">
 
 	<!-- stylesheets are conveniently separated into components -->
 	<link rel="stylesheet" media="all" href="/static/lib/css/chat-bubble/setup.css">
@@ -42,13 +42,22 @@
             urlParams = {};
             while (match = search.exec(query))
             urlParams[decode(match[1])] = decode(match[2]);
+			//change theme
+			var color1 = urlParams["color1"];
+			if (color1 != "" && color1 != undefined) {
+				document.body.style.backgroundColor = "#" + color1;
+			}
+			var color2 = urlParams["color2"];
+			if (color2 != "" && color2 != undefined) {
+				document.getElementsByClassName('bubble-container').style.backgroundColor = "#" + color2;
+			}
             if (urlParams["UID"] == "") {
                 var root = location.protocol + '//' + location.host;
                 var redURL = root + "/login?continue=" + location.href;
-                location.href= redURL;
+                location.href= redURL	;
             }
             //Welcome
-            speakMessage("Hi, I'm ULAPPH Bot! Type any text or click button below.");
+            speakMessage("Hi, I'm ULAPPH Bot! You can talk to me by typing your message below. What can I do for you?");
         };
     </script>
 </head>
@@ -92,13 +101,15 @@ var chatWindow = new Bubbles(document.getElementById("chat"), "chatWindow", {
     var miss = function() {
       //ulapph
     console.log("call nlp backend");
+	stopTalking();
     var root = location.protocol + '//' + location.host;
     soundManager.createSound({
         id: 'waterscr',
         volume: 90,
-        url: root + "/static/audio/water-drop.mp3"
+        //url: root + "/static/audio/water-drop.mp3"
+		url: root + "/static/audio/water-drop.ogg"
     });
-    playSound('water');	
+    playSound('waterscr');	
 	//call nlp
     if (window.XMLHttpRequest)
 	  {// code for IE7+, Firefox, Chrome, Opera, Safari
@@ -123,15 +134,28 @@ var chatWindow = new Bubbles(document.getElementById("chat"), "chatWindow", {
     }
     CURRENT_INTENT = o.input;
 	//xhr.open("POST","/nlp?nlpFunc=nlpProse&p=" + o.input + "&SID=" + KNOWLEDGE_BASE + "&DEBUG=" + FL_DEBUG, true); 
-    xhr.open("POST","/nlp?nlpFunc=nlpProse&p=" + o.input + "&SID=" + KNOWLEDGE_BASE + "&DEBUG=" + FL_DEBUG, true);
+	var a = new Date,
+		watsonID = "",
+		ottoJS = "",
+		s = a.getFullYear() + "-" + (a.getMonth() + 1) + "-" + a.getDate() + " " + a.getHours() + ":" + a.getMinutes() + ":" + a.getSeconds(),
+		//r = location.protocol + "//" + location.host + "/orch?oFunc=iwa&oMsg=" + o.input + "&oUser=" + uid + "&oUI=isMobile" + "false" + "&oWA=" + watsonID + "&oLoc=" + ottoJS + "&oTS=" + s;
+		r = location.protocol + "//" + location.host + "/orch?oFunc=iwa&oMsg=" + o.input + "&oUser=" + uid + "&oUI=isChatWindow" + "&oWA=" + watsonID + "&oLoc=" + ottoJS + "&oTS=" + s;
+	console.log("r: ", r);
+	xhr.open("POST",r, true); 
 	xhr.send();
 	
 	 xhr.onreadystatechange=function()
 	  {
 	  if (xhr.readyState==4 && xhr.status==200)
 		{
-		var currVal = xhr.responseText;
+			var currVal = xhr.responseText;
 			console.log(currVal);
+			soundManager.createSound({
+				id: 'sonarsound',
+				volume: 90,
+				url: root + "/static/audio/sonar.ogg"
+			});
+			playSound('sonarsound');
 
 			if (currVal == "Sorry, I didn't get that.") {	
 			    funcPromptSorry();
@@ -145,17 +169,43 @@ var chatWindow = new Bubbles(document.getElementById("chat"), "chatWindow", {
 				case "nlp-failed":
 					chatWindow.talk(convo, currVal);
 					break;
-				default:
-				  chatWindow.talk(
-				    {
-				      "i-dont-get-it": {
-				        says: [currVal],
-				        //reply: o.convo[o.standingAnswer].reply
-				        reply: []
-				      }
-				    },
-				    "i-dont-get-it"
-				  )
+				default:	
+					var e = JSON.parse(currVal);
+                    var thisMessage = e.data;
+					var ava = e.icon;
+					if (ava == "" || ava == undefined) {
+						ava = "/static/img/bots/general-assistant.png";
+					}
+					var avaTag = "<img src=\"" + ava + "\" alt=\"Bot Avatar\" width=\"100\" height=\"100\" align=\"left\">";
+					if (thisMessage.indexOf("UWM_ACTION::") >= 0) {
+						var SPL = thisMessage.split("UWM_ACTION::");
+						  chatWindow.talk(
+							{
+							  "defaul-response": {
+								says: [avaTag+SPL[0]],
+								//says: [currVal],
+								//reply: o.convo[o.standingAnswer].reply
+								reply: []
+							  }
+							},
+							"defaul-response"
+						  )
+						speakMessage(SPL[0]);
+						executeDesktopActions(chatWindow, thisMessage, avaTag);
+                    } else {
+					  chatWindow.talk(
+						{
+						  "defaul-response": {
+							says: [avaTag+thisMessage],
+							//says: [currVal],
+							//reply: o.convo[o.standingAnswer].reply
+							reply: []
+						  }
+						},
+						"defaul-response"
+					  )
+					  speakMessage(thisMessage);
+					}
 			}
 			return;
 		}
@@ -190,68 +240,9 @@ var chatWindow = new Bubbles(document.getElementById("chat"), "chatWindow", {
 var botUrl = window.location.href;
 var convo = {
   ice: {
-    says: ["Hi, I'm ULAPPH Bot!", 
-    		"<a href=\"" + botUrl + "\" title=\"Click to restart ULAPPH bot!\"><img src=\"/static/chat-bubble/bot.gif\"></a>", 
-    		"Type any text or click button below."
+    says: ["Hi, I'm ULAPPH Bot!", "You can talk to me by typing your message below.",  "What can I do for you?"
     	],
-	  reply: [
-	    {
-	      question: "List functions",
-	      answer: "iceListFunctions"
-	    },
-	    {
-	      question: "All Desktops",
-	      answer: "funcAllDesktops"
-	    },
-	    {
-	      question: "All Sites",
-	      answer: "funcAllSites"
-	    },
-	    {
-	      question: "All People",
-	      answer: "funcAllPeople"
-	    },
-	    {
-	      question: "All Trending",
-	      answer: "funcAllTrending"
-	    },
-	    {
-	      question: "Whats New!",
-	      answer: "funcAllWhatsNew"
-	    },
-	    {
-	      question: "Show Topic News",
-	      answer: "showTopicNews"
-	    },
-	    {
-	      question: "Show Random",
-	      answer: "showRandoms"
-	    },
-	    {
-	      question: "Open Webapp",
-	      answer: "showWebapp"
-	    },
-		{
-	      question: "Contents",
-	      answer: "content-functions"
-	    },
-		{
-	      question: "Tools",
-	      answer: "funcShowTools"
-	    },
-	    {
-	      question: "PWA",
-	      answer: "funcPwaApps"
-	    },
-        {
-            question: "SearchInternal",
-            answer: "funcSearchUlapph"
-        },
-        {
-            question: "SearchExternal",
-            answer: "funcSearchUlapphExt"
-        }
-	  ]
+	  reply: []
   },
   "iceListFunctions": {
     says: ["Here are some text you can type:",
@@ -349,10 +340,6 @@ var convo = {
 	      answer: "join-chats"
 	    },
 		{
-	      question: "Lotto",
-	      answer: "funcGamesLotto"
-	    },
-		{
 	      question: "TimelineJS",
 	      answer: "funcTimelineJS"
 	    },	
@@ -367,32 +354,6 @@ var convo = {
 		{
 	      question: "Speak Time",
 	      answer: "funcSpeakTime"
-	    }
-		]
-  },
-  "funcGamesLotto": {
-    says: ["Click below type!"
-    	],
-    reply: [
-		{
-	      question: "Grand Lotto 6/55",
-	      answer: "funcLotto655"
-	    },
-		{
-	      question: "Lotto 6/42",
-	      answer: "funcLotto642"
-	    },
-		{
-	      question: "Mega Lotto 6/45",
-	      answer: "funcLotto645"
-	    },	
-		{
-	      question: "Super Lotto 6/49",
-	      answer: "funcLotto649"
-	    },	
-		{
-	      question: "Ultra Lotto 6/58",
-	      answer: "funcLotto658"
 	    }
 		]
   },
@@ -1175,87 +1136,6 @@ funcRandomYoutube = function () {
 	  }
 }
 
-funcLotto655 = function() {
-	funcGenerateLotto("6/55");
-}
-
-funcLotto642 = function() {
-	funcGenerateLotto("6/42");
-}
-
-funcLotto645 = function() {
-	funcGenerateLotto("6/45");
-}
-
-funcLotto649 = function() {
-	funcGenerateLotto("6/49");
-}
-
-funcLotto658 = function() {
-	funcGenerateLotto("6/58");
-}
-
-funcGenerateLotto = function (lotto) {
-	//call nlp
-    if (window.XMLHttpRequest)
-	  {// code for IE7+, Firefox, Chrome, Opera, Safari
-	  xhr5=new XMLHttpRequest();
-	  }
-	else
-	  {// code for IE6, IE5
-	  xhr5=new ActiveXObject('MSXML2.XMLHTTP.3.0');
-	  } 
-	console.log("Calling lotto generator...");
-	var tickets = prompt("How many tickets?", 1);
-	if (tickets == "") {
-		tickets = 1;
-	}
-	xhr5.open("POST","/rcg?RAN_FUNC=LG&tickets=" + tickets +"&lg=" + lotto, true); 
-	xhr5.send();
-	
-	 xhr5.onreadystatechange=function(convo)
-	  {
-	  if (xhr5.readyState==4 && xhr5.status==200)
-		{
-		var currVal = xhr5.responseText;
-			console.log(currVal);
-			  if (currVal != "") {
-				  chatWindow.talk(
-					{
-					  "random-lotto": {
-					  says: [currVal],
-						reply: [	    		{
-						      question: "Grand Lotto 6/55",
-						      answer: "funcLotto655"
-						    },
-							{
-						      question: "Lotto 6/42",
-						      answer: "funcLotto642"
-						    },
-							{
-						      question: "Mega Lotto 6/45",
-						      answer: "funcLotto645"
-						    },	
-							{
-						      question: "Super Lotto 6/49",
-						      answer: "funcLotto649"
-						    },	
-							{
-						      question: "Ultra Lotto 6/58",
-						      answer: "funcLotto658"
-						    }
-							]
-					  }
-					},
-					"random-lotto"
-				)
-			}
-			return;
-		}
-	  }
-}
-
-
 function ValidURL(textval) {
     var urlregex = /^(https?|ftp):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/;
     return urlregex.test(textval);
@@ -1376,12 +1256,6 @@ funcPromptSorry = function () {
 	      "funcPromptSorry": {
 	        says: ["Sorry, I am not able to understand what you said... I'll learn about this and will surely have an answer next time!", "You can actually help me by clicking the \"Teach Me\" button below to help me learn the response to this intent. You may also click the other buttons to proceed with other actions you might want to take."],
 	        reply: [{
-    	      question: "SearchInternal",
-    	      answer: "funcSearchUlapph"
-    	    },{
-    	      question: "SearchExternal",
-    	      answer: "funcSearchUlapphExt"
-    	    },{
     	      question: "Teach Me",
     	      answer: "funcCrowdSource"
     	    }]
@@ -1433,7 +1307,7 @@ function speakMessage(thisMsg){
 				thisMsg = res[0];
 			}		
 		}
-
+		console.log("MESSAGE: "+thisMsg);
 		var msg = new SpeechSynthesisUtterance();
 		msg.rate = 1;
 		msg.pitch = 1;
@@ -1442,9 +1316,197 @@ function speakMessage(thisMsg){
 	}
 }
 
+function executeDesktopActions(chatWindow, e, avaTag) {
+	//var t = document.getElementById("isMobile").value,
+	var t = false;
+	var n = e.split("::");
+	switch (n[1]) {
+		case "SHOWINFO":
+			var i = "<p>" + n[2] + "</p>";
+			//if ("true" == t) SpeechKITT.speakMessageNow(i);
+			//else(r = window.open("", "_blank", "width=200,height=100")).document.write(i), r.focus();
+			//r = )., r.focus();
+			//window.open("", "_blank", "width=200,height=100");
+			//document.write(i);
+			  chatWindow.talk(
+				{
+				  "defaul-response": {
+					says: [avaTag+i],
+					//says: [currVal],
+					//reply: o.convo[o.standingAnswer].reply
+					reply: []
+				  }
+				},
+				"defaul-response"
+			  )
+			break;
+		case "PLAYSOUND":
+			document.createElement("audio"), 1 == isEdge || 1 == isIE || isSafari, soundManager.createSound({
+				id: "mySoundSK",
+				volume: 75,
+				url: root + n[2]
+			}), soundManager.play("mySoundSK");
+			break;
+		case "SETBG":
+			//document.getElementById("page").style.backgroundImage = "url('" + n[2] + "')";
+			//window.open(n[2], "_blank");
+			  chatWindow.talk(
+				{
+				  "defaul-response": {
+					says: ["<img src=\"" + n[2] + "\"></img>"],
+					//says: [n[2]],
+					//says: [currVal],
+					//reply: o.convo[o.standingAnswer].reply
+					reply: []
+				  }
+				},
+				"defaul-response"
+			  )
+			break;
+		case "PAUSEWP":
+			//(a = document.getElementById("ranid")).value, a.value = "pause", alertifyThis("Wallpaper paused.");
+			console.log("PAUSEWP is not yet supported");
+			break;
+		case "UNPAUSEWP":
+			//var a;
+			//(a = document.getElementById("ranid")).value, a.value = "1", alertifyThis("Wallpaper enabled.");
+			console.log("UNPAUSEWP is not yet supported");
+			break;
+		case "OPENWINDOW":
+			//if ("true" == t) {
+			//	var s = "It seems your device can't launch URL in a window. Let me open new tab.";
+			//	SpeechKITT.speakMessageNow(s), window.open(n[2], n[2])
+			//} else openDropSmall(n[2]);
+			//window.open(n[2], n[2]);
+			  chatWindow.talk(
+				{
+				  "defaul-response": {
+					says: [avaTag+"<a href=\"" + n[2] + "\" target=\"" + n[2] + "\">" + n[2] + "</a>"],
+					//says: [n[2]],
+					//says: [currVal],
+					//reply: o.convo[o.standingAnswer].reply
+					reply: []
+				  }
+				},
+				"defaul-response"
+			  )
+			break;
+		case "OPENACE":
+			//var r;
+			//i = "=========\n" + n[2] + "\n==========\n";
+			//if ("true" == t)(r = window.open("", "_blank", "width=200,height=100")).document.write(i), r.focus();
+			//else openAceEditor(i);
+			//window.open("", "_blank", "width=200,height=100");
+			//document.write(i);
+			break;
+		case "OPENTAB":
+			//"true" == t ? (s = "It seems your device can't launch URL in a window. Let me open new tab.", SpeechKITT.speakMessageNow(s), window.open(n[2], n[2])) : window.open(n[2], "radio");
+			//window.open(n[2], n[2]);
+			  chatWindow.talk(
+				{
+				  "defaul-response": {
+					says: [avaTag+"<a href=\"" + n[2] + "\" target=\"" + n[2] + "\">" + n[2] + "</a>"],
+					//says: [n[2]],
+					//says: [currVal],
+					//reply: o.convo[o.standingAnswer].reply
+					reply: []
+				  }
+				},
+				"defaul-response"
+			  )
+			break;
+		case "OPENTABS":
+			if ((l = n[2].split("@888@")).length > 0) {
+				for (o = 0; o <= l.length - 1; o++) {
+					//window.open(l[o], l[o]);
+					  chatWindow.talk(
+						{
+						  "defaul-response": {
+							says: [avaTag+"<a href=\"" + l[o] + "\" target=\"" + l[o] + "\">" + l[o] + "</a>"],
+							//says: [l[o]],
+							//says: [currVal],
+							//reply: o.convo[o.standingAnswer].reply
+							reply: []
+						  }
+						},
+						"defaul-response"
+					  )
+				}
+			}
+			break;
+		case "CASCADE":
+			//uwmArrWin();
+			console.log("CASCADE is not yet supported");
+			break;
+		case "CLEAR":
+			//windowManager.clear(), windowManager.clear(), windowManager.clear(), windowManager.clear(), endConversation();
+			console.log("CLEAR is not yet supported");
+			break;
+		case "MAXIMIZE":
+			console.log("MAXIMIZE is not yet supported");
+			break;
+		case "MINIMIZE":
+			console.log("MINIMIZE is not yet supported");
+			//uwmOnOff();
+			break;
+		case "OPENIMGLIST":
+			if ((l = n[2].split("@888@")).length > 0)
+				for (o = 0; o <= l.length - 1; o++)
+					if ("" != l[o]) {
+						//var c = l[o];
+						//document.getElementById("page").style.backgroundImage = "url('" + c + "')";
+						//window.open(c);
+						  chatWindow.talk(
+							{
+							  "defaul-response": {
+								says: [avaTag+"<img src=\"" + c + "\"></img>"],
+								//says: [c],
+								//says: [currVal],
+								//reply: o.convo[o.standingAnswer].reply
+								reply: []
+							  }
+							},
+							"defaul-response"
+						  )
+						break
+					}
+			break;
+		case "OPENWINDOWS":
+			var l;
+			if ((l = n[2].split("@888@")).length > 0) {
+				//openWindow(l[o], "Window " + o);
+				  chatWindow.talk(
+					{
+					  "defaul-response": {
+						says: [avaTag+"<a href=\"" + l[o] + "\" target=\"" + l[o] + "\">" + l[o] + "</a>"],
+						//says: [l[o]],
+						//says: [currVal],
+						//reply: o.convo[o.standingAnswer].reply
+						reply: []
+					  }
+					},
+					"defaul-response"
+				  )
+			}
+			break;
+		case "NEWBOTMESSAGE":
+			//var d = n[2];
+			//newBotMessage(d);
+			console.log("NEWBOTMESSAGE is not yet supported");
+			break;
+		default:
+			console.log(e), console.log("Invalid operation"), alert.log("Invalid operation")
+	}
+}
+
 function playSound(sid) {
 	soundManager.play(sid);
 	return;
+}
+
+function stopTalking() {
+	window.speechSynthesis.cancel()
+	//document.getElementById('page').style.backgroundImage = "url('/static/img/LP_DeepField_NASA.gif')";
 }
 
 function reloadPage() {
@@ -1455,5 +1517,5 @@ function reloadPage() {
 chatWindow.talk(convo)
 </script>
 <!--pwa service worker registration-->
-<script src="/chat-bubble/main.js"></script>
+<script src="/static/chat-bubble/main.js"></script>
 </body>

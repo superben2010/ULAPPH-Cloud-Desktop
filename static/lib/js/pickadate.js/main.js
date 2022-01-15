@@ -81,8 +81,8 @@ $( '#date_demo__accessibility-labels' ).pickadate({
     labelYearSelect: 'Pick a year from the dropdown',
     selectMonths: true,
     selectYears: true,
-	min: [2000,1,1],
-  	max: [2020,12,30]
+	min: [2018,1,1],
+  	max: [2030,12,30]
 })
 
 $( '#date_demo__accessibility-labels2' ).pickadate({
@@ -92,8 +92,8 @@ $( '#date_demo__accessibility-labels2' ).pickadate({
     labelYearSelect: 'Pick a year from the dropdown',
     selectMonths: true,
     selectYears: true,
-	min: [2000,1,1],
-  	max: [2020,12,30]
+	min: [2018,1,1],
+  	max: [2030,12,30]
 })
 
 /**

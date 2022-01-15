@@ -2,6 +2,12 @@ var db;
 var ea = document.getElementById("aUser");
 var eh = document.getElementById("host");
 var mi = document.getElementById("MEDIA_ID");  
+if (mi.value == "" || mi.value == undefined) {
+	//use notesrc
+	mi = document.getElementById("notesrc");
+}
+var customNotesMediaID = parseInt(document.getElementById("notesrc").value);
+var customNotesTable = "WebKitStickyNotes_" + customNotesMediaID;   
 //var dbName = eh.value +  "-" + ea.value;
 var res = ea.value;
 var SPL = res.split("---");
@@ -12,10 +18,10 @@ if (SPL.length == 2) {
 }
 
 $(document).ready(function() {
-	db = openDatabase(dbName, "1.0", "ULAPPH Sticky Notes", 200000);
-    db.transaction(function(tx) {
-    },dbError,function(tx) { 
-    });
+	db = openDatabase(dbName, "1.0", "ULAPPH Sticky Notes"+mi.value, 200000);
+	db.transaction(function(tx) {
+	},dbError,function(tx) { 
+	});
 
 	function dbError(e) {
 		console.dir(e);
@@ -38,7 +44,7 @@ $(document).ready(function() {
 		console.log("Syncing data to cloud...");
 		e.preventDefault();
 		$.when(
-			backup("WebkitStickyNotes")
+			backup(customNotesTable)
 		).then(function(notes) {
 			var data = {notes:notes};
 			var serializedData = JSON.stringify(data);
@@ -55,7 +61,7 @@ $(document).ready(function() {
 		e.preventDefault();
 
 		$.when(
-			backup("WebkitStickyNotes")
+			backup(customNotesTable)
 		).then(function(notes) {
 			var g = document.getElementById("status");
 			g.innerHTML = "<img src=\"/static/img/loading.gif\" width=\"50\" height=\"50\">";
@@ -66,7 +72,7 @@ $(document).ready(function() {
 			console.log("Clear local notes...");
 			db.transaction(function(tx)
 			{
-				tx.executeSql("DELETE * FROM WebKitStickyNotes");
+				tx.executeSql("DELETE * FROM " + customNotesTable);
 				console.log("Deleted all notes!");
 			});			
 			//wait for 10 seconds
@@ -84,7 +90,7 @@ $(document).ready(function() {
 		if (confirm('This will delete first all local notes, are you sure you want to proceed?')) {
 			db.transaction(function(tx)
 			{
-				tx.executeSql("DELETE FROM WebKitStickyNotes");
+				tx.executeSql("DELETE FROM " + customNotesTable);
 			});
 		} else {
 			return;
@@ -100,7 +106,7 @@ $(document).ready(function() {
 		if (confirm('WARNING!!! This will delete all local notes, are you sure you want to proceed?')) {
 			db.transaction(function(tx)
 			{
-				tx.executeSql("DELETE FROM WebKitStickyNotes");
+				tx.executeSql("DELETE FROM " + customNotesTable);
 			});
 		} else {
 			return;
@@ -111,6 +117,7 @@ $(document).ready(function() {
 	});
 
 });
+
 
 function convertResults(resultset) {
 	var results = [];
@@ -286,7 +293,7 @@ Note.prototype = {
 		var note = this;
 		db.transaction(function(tx)
 		{
-			tx.executeSql("DELETE FROM WebKitStickyNotes WHERE timestamp = ?", [note.timestamp]);
+			tx.executeSql("DELETE FROM " + customNotesTable + " WHERE timestamp = ?", [note.timestamp]);
 		});
 		
 		var duration = event.shiftKey ? 2 : .25;
@@ -328,7 +335,7 @@ Note.prototype = {
 		var note = this;
 		db.transaction(function (tx)
 		{
-			tx.executeSql("UPDATE WebKitStickyNotes SET desktop = ?, note = ?, timestamp = ?, left = ?, top = ?, zindex = ? WHERE id = ? and desktop = ?", [thisDesktop, note.text, note.timestamp, note.left, note.top, note.zIndex, note.id, thisDesktop]);
+			tx.executeSql("UPDATE " + customNotesTable + " SET desktop = ?, note = ?, timestamp = ?, left = ?, top = ?, zindex = ? WHERE id = ? and desktop = ?", [thisDesktop, note.text, note.timestamp, note.left, note.top, note.zIndex, note.id, thisDesktop]);
 			FL_UPDATE = true;
 		});
 		
@@ -341,7 +348,7 @@ Note.prototype = {
 		var note = this;
 		db.transaction(function (tx) 
 		{
-			tx.executeSql("INSERT INTO WebKitStickyNotes (id, desktop, note, timestamp, left, top, zindex) VALUES (?, ?, ?, ?, ?, ?, ?)", [note.id, note.desktop, note.text, note.timestamp, note.left, note.top, note.zindex]);
+			tx.executeSql("INSERT INTO " + customNotesTable + " (id, desktop, note, timestamp, left, top, zindex) VALUES (?, ?, ?, ?, ?, ?, ?)", [note.id, note.desktop, note.text, note.timestamp, note.left, note.top, note.zindex]);
 		}); 
 	},
 

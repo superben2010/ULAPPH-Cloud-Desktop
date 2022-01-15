@@ -18,6 +18,12 @@ if (newsEn == "true") {
 	localStorage[root+"news"] = "off";
 	alertify.error("News is turned off. To turn on, say START NEWS or <a href='#' onClick=\"newsStream();return false;\">click to start news</a>.");
 }
+//
+if (localStorage[root+'isStreaming'] == 'Y') {
+	alertify.error("CCTV Stream is turned on. To turn off, say CCTV OFF or <a href='#' onClick=\"cctvStream();return false;\">click to stop cctv stream</a>.");
+} else {
+	alertify.error("CCTV Stream is turned off. To turn on, say CCTV ON or <a href='#' onClick=\"cctvStream();return false;\">click to start cctv stream</a>.");
+}
 alertify.set({
 	delay: 1000
 });
@@ -84,6 +90,7 @@ function funcSetTopic(sid) {
     localStorage[root+"newsapiurl"] = url;
 	localStorage[root+"customTopic"] = sid;
     consoleLogger("url: "+url);
+    stopTalking();
     var thisMsg = "Topic news has been set to "+ sid;
 	speakMessage(thisMsg);
 	consoleLogger("thisMsg: "+thisMsg);
@@ -103,6 +110,9 @@ function funcSetTopicFromInput() {
 		funcSetTopic(tTopic);
 	}
 }
+function funcSetTopicFromCats(cTopic) {
+	funcSetTopic(cTopic);
+}
 //news
 funcnews = function () {
 	if (localStorage[root + 'quite-flag'] == "on") {
@@ -113,6 +123,10 @@ funcnews = function () {
 		consoleLogger("funcnews() not executed: news off");
         return;
     }
+    if (document.getElementById("ranid").value == "pause") {
+		consoleLogger("funcnews() not executed: wallpaper paused");
+		return;
+	}
 	consoleLogger("News fetch interval: "+newsFetch);
     consoleLogger("funcnews()");
     if (window.XMLHttpRequest)
@@ -176,7 +190,7 @@ funcnews = function () {
     if (xhr.readyState==4 && xhr.status==200)
         {
         var currVal = xhr.responseText;
-            consoleLogger(currVal);
+            //consoleLogger(currVal);
             var jsonData = JSON.parse(currVal);
             var totalResults = jsonData['totalResults'];
 			consoleLogger("totalResults: "+totalResults);
@@ -209,6 +223,10 @@ funcshow = function () {
 		consoleLogger("funcshow() not executed: news off");
         return;
     }
+	if (document.getElementById("ranid").value == "pause") {
+		consoleLogger("funcshow() not executed: wallpaper paused");
+		return;
+	}
     localStorage["newsapi-processing"] = "Y";
     var locObj = localStorage[root+"newsobj"];
     //consoleLogger("locObj: "+locObj);
@@ -268,7 +286,7 @@ funcshow = function () {
 					alertify.set({
 						delay: 120000
 					});
-					alertify.log("NEWS: "+msgText+"<br>"+"VIEW: <a href='" + url +  "' target='" + url + "'>News</a> | <a href='" + img +  "' target='" + img + "'>Image</a> | NEXT: <a href='#' onClick=\"stopTalking();funcshow();return false;\">Next</a> | STOP: <a href='#' onClick=\"stopTalking();return false;\">Stop</a>");
+					alertify.log("NEWS: "+msgText+"<br>"+"VIEW: <a href='" + url +  "' target='" + url + "'>News</a> | <a href='" + img +  "' target='" + img + "'>Image</a> | NEXT: <a href='#' onClick=\"stopTalking();funcshow();return false;\">Next</a> | STOP: <a href='#' onClick=\"stopTalking();return false;\">Stop</a> | DATE: " + pdate);
                 }
                 curIndex = curIndex + 1;
             }

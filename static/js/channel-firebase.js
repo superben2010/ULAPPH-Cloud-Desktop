@@ -10,6 +10,7 @@ function initFirebase() {
   // We'll initialize this later in openChannel()
   var channel = null;
   var channelB = null;
+  var channelC = null;
 
   /**
    * This method lets the server know that the user has opened the channel
@@ -67,10 +68,14 @@ function initFirebase() {
 	if(typeof(Storage) !== "undefined") {
 		localStorage[root+'idToken'] = idToken;
 	}
-    firebase.auth().signInWithCustomToken(idToken).catch(function(error) {
-      console.log('Login Failed!', error.code);
-      console.log('Error message: ', error.message);
-    });
+	if (firebase) {
+		firebase.auth().signInWithCustomToken(idToken).catch(function(error) {
+		  console.log('Login Failed!', error.code);
+		  console.log('Error message: ', error.message);
+		});
+	} else {
+	console.log('Firebase not enabled');
+	}
 	console.log('Firebase Login successful!');
 	//get message for the user channel
 	var tok = document.getElementById("tok");
@@ -114,6 +119,16 @@ function initFirebase() {
 	//listener
 	channelB.limitToLast(1).on('child_added', function(data) {
 	  //console.log("child_added");
+	  onMessage(data.val());
+	});
+	//listener
+	var cctvChan = sssVal + '/' + aepVal + '/cctv';
+	console.log("cctvChan: ", cctvChan);
+	channelC = firebase.database().ref(cctvChan);
+	//listener
+	channelC.limitToLast(1).on('child_added', function(data) {
+	  console.log("child_added");
+	  console.log("Received from: "+cctvChan);
 	  onMessage(data.val());
 	});
     onOpened();

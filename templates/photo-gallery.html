@@ -148,7 +148,7 @@
 	</fieldset>
 	<div class="custom-select" style="width:300px;">
 		<select id="TYPE" name="TYPE">
-			<!--option value="">Select Type</option-->
+			<option value="">Select Type</option>
 			<option value="TDSMEDIA">Media Contents</option>
             <option value="CCTV">CCTV Contents</option>
 			<!--option value="TDSSLIDE">Slide Contents</option>
@@ -208,13 +208,14 @@
                         <script>
                                 function selectYear() {
 									var cat = urlParams["category"];
+									var uid = urlParams["uid"];
 									/*if (cat == "") {
 										cat = "desktop0";
 									}*/
 									var x = document.getElementById("YEAR").value;
 									if (x != "") {
 									var str = window.location.href;
-									window.location.assign('/media?FUNC_CODE=VIEW_THUMBS&PROC=Y&start_date=1%20January,%20' + x + '&start_time=12:00%20AM&end_date=10%20December,%20' + x + '&end_time=11:59%20PM&cont_type=TDSMEDIA&cont_cat=' + cat + '&kword=');
+									window.location.assign('/media?FUNC_CODE=VIEW_THUMBS&PROC=Y&start_date=1%20January,%20' + x + '&start_time=12:00%20AM&end_date=10%20December,%20' + x + '&end_time=11:59%20PM&cont_type=TDSMEDIA&cont_cat=' + cat + '&kword=' + '&uid=' + uid);
 									}
 									return
                                 };
@@ -266,6 +267,7 @@
 		var end_time = document.getElementsByName("end_time")[0].value;
 		var contType = document.getElementById("TYPE").value;
 		var contCat = document.getElementById("CATEGORY").value;
+		var uid = urlParams["uid"];
 		//save localstorage
 		localStorage["pg.start_date"] = start_date;
 		localStorage["pg.start_time"] = start_time;
@@ -286,7 +288,7 @@
 			alert("Please populate all fields!");
 			return;
 		}
-		var genLink = "/media?FUNC_CODE=VIEW_THUMBS&PROC=Y" + "&start_date=" + start_date + "&start_time=" + start_time + "&end_date=" + end_date + "&end_time=" + end_time + "&cont_type=" + contType + "&cont_cat=" + contCat + "&kword=" + kword;
+		var genLink = "/media?FUNC_CODE=VIEW_THUMBS&PROC=Y" + "&start_date=" + start_date + "&start_time=" + start_time + "&end_date=" + end_date + "&end_time=" + end_time + "&cont_type=" + contType + "&cont_cat=" + contCat + "&kword=" + kword + "&uid=" + uid;
 		console.log("genLink: "+genLink);
 		location.href=genLink;
 	}	
