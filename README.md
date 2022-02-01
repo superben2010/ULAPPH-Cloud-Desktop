@@ -14,17 +14,29 @@ Too Long; Dont Read (TL;DR)
 
 Versions
 --------------
-- Versioning is based on famous Filipino dishes. https://en.wikipedia.org/wiki/List_of_Philippine_dishes
+ULAPPH versioning is based on famous Filipino dishes.
+https://en.wikipedia.org/wiki/List_of_Philippine_dishes
+
 - Version 2019: "Adobo" - Appengine version
 - Version 2020: "Afridata" - Dockerized, Platform-agnostic version with AI using IBM Watson
+```
+                            - Artificial Intelligence (AI) NLP from IBM Watson
+                            - Custom IBM Watson Orchestrator
+```
 - Version 2021: *Version not released due to COVID-19 Pandemic*
 - Version 2022: "Barbecue" - Added more AI use cases and improved productivity features:
+```
                             - Default & Custom Search Engines
                             - Multiple desktop support
                             - Programmable Javascript startup
                             - Chat with AI...
                             - Desktop News Reader
                             - Sticky Notes Per Desktop
+```
+- Version 2022-2: "Bopis" - Upcoming version with planned features:
+```
+                            - TBD
+```
 
 Watch Demo Videos in Youtube!
 -----------
@@ -49,9 +61,82 @@ ULAPPH Architecture
 
 ![ULAPPH Architecture](https://storage.googleapis.com/ulapph-demo.appspot.com/public/ULAPPH%20Cloud%20Desktop%20System%20-%20Barbecue%20-%202022-01-15.png "ULAPPH Architecture")
 
-Libraries/Packages Used
-----------------
+Installation Dependencies for AI Support
+------------------
+The installation of ULAPPH requires or may need the dependencies such as IBM Watson AI workspaces, configuration files, data folder (for local install), shell installer script, and custom Otto javascript codes for serving the conversational chatbots. Yes, the install is quite complicated as it looks but once you have everything setup in your machine, installation is as easy as executing one shell script since it automates a lot of things.
+``
+drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr 26 00:23 ULAPPH-Cloud-Desktop/
+drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr  4 20:11 ULAPPH-Cloud-Desktop-AI/
+drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr  4 20:11 ULAPPH-Cloud-Desktop-Configs/
+drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr 18 22:30 ULAPPH-Cloud-Desktop-Data/
+drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr 19 23:46 ULAPPH-Cloud-Desktop-Shell-Installer/
+drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr 21 18:05 ULAPPH-Cloud-Desktop-Watson/
+``
 
+
+Platforms Supported
+------------------
+- Windows 10 laptop (tested and it worked!)
+- Android using Termux (tested and it worked!)
+- Google Appengine Standard (tested and it worked!)
+- Google Cloud Run (tested and it worked!)
+- Google Kubernetes Engine (tested and it worked!)
+- AWS Cloud (pending testing)
+- Microsoft Azure (pending testing)
+- IBM Bluemix (pending testing)
+- Alibaba Cloud (pending testing)
+
+ULAPPH is built from opensources!
+----------------
+- Edwin D. Vinas (Golang/JS/HTML/CSS)
+- Christine T. Cunanan (UI/Testing/ContentManagement)
+- (In memory of) Rammel D. Vinas (CorelDraw/Photoshop/Graphics)
+- Our seven indoor Khao Manee Cats and a lot of outdoor homeless/adopted cats!
+- Google Search, Wikipedia, StackOverflow, Reddit, W3Schools and all resources with code samples!
+- Alessio Atzeni -- Developer of Mac OSX desktop UI (http://www.alessioatzeni.com/mac-osx-lion-css3/)
+- ed_g2s of Sourceforge -- Developer of Javascript Windowing system used (http://jswm.sourceforge.net)
+- And all the developers of other free/opensource libraries integrated with ULAPPH (see **Golang Libraries** section below)
+
+Sample Uses of ULAPPH
+----------------
+### www.ulapph.com
+- https://www.ulapph.com
+    - A private demo website of ULAPPH Cloud Desktop. Latest code is always deployed here.
+    - Running in Google Cloud's AppEngine standard environment with Go 1.13 runtime
+    - Integrated with Google Cloud's IAP proxy & Google Oauth as part of authentication
+    - Contains working version of Artificial Intelligence (AI) Natural Language Processing (NLP) using IBM Watson
+    - Access to the site is limited to the admin only
+
+### demo.ulapph.com - TBD
+- https://demo.ulapph.com
+    - A free publicly accessible demo website of ULAPPH Cloud Desktop. Latest code may not be always deployed here.
+    - Access to the site may not be always available due to free quota account only.
+
+### ULAPPH News Stream Channel
+- https://www.youtube.com/channel/UCKgcONV17i0yRW4t3ogla2w/videos
+    - A news stream automatically generated from ULAPPH Cloud Desktop.
+
+
+Troubleshooting
+----------------
+Here are some errors you may encounter while installing or running the source codes!
+
+ERRORS
+-------
+1) ERROR: createHTTPTask: cloudtasks.CreateTask: rpc error: code = PermissionDenied desc = Cloud Tasks API has not been used in project 255989709567 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudtasks.googleapis.com/overview?project=255989709567 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+- Just enable the CloudTask API
+- Also create a queue
+    gcloud tasks queues create [QUEUE_ID]
+    gcloud tasks queues create ulapph
+
+Change History
+----------------
+EDV - 1/15/2022 - Created change history; updated README
+EDV - 2/1/2022 - Created README for installation
+
+Golang Libraries
+----------------
+```
     import (
         "net"
         "html/template"
@@ -138,59 +223,4 @@ Libraries/Packages Used
         "github.com/boltdb/bolt"
         "github.com/go-redis/redis/v7"
     )
-
-Installation Dependencies for AI Support
-------------------
-The installation of ULAPPH requires or may need the dependencies such as IBM Watson AI workspaces, configuration files, data folder (for local install), shell installer script, and custom Otto javascript codes for serving the conversational chatbots. Yes, the install is quite complicated as it looks but once you have everything setup in your machine, installation is as easy as executing one shell script since it automates a lot of things.
-``
-drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr 26 00:23 ULAPPH-Cloud-Desktop/
-drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr  4 20:11 ULAPPH-Cloud-Desktop-AI/
-drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr  4 20:11 ULAPPH-Cloud-Desktop-Configs/
-drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr 18 22:30 ULAPPH-Cloud-Desktop-Data/
-drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr 19 23:46 ULAPPH-Cloud-Desktop-Shell-Installer/
-drwxr-xr-x 1 edwin.d.vinas 1049089     0 Apr 21 18:05 ULAPPH-Cloud-Desktop-Watson/
-``
-
-
-Platforms Supported
-------------------
-- Windows 10 laptop (tested and it worked!)
-- Android using Termux (tested and it worked!)
-- Google Appengine Standard (tested and it worked!)
-- Google Cloud Run (tested and it worked!)
-- Google Kubernetes Engine (tested and it worked!)
-- AWS Cloud (pending testing)
-- Microsoft Azure (pending testing)
-- IBM Bluemix (pending testing)
-- Alibaba Cloud (pending testing)
-
-ULAPPH is built from opensources!
-----------------
-- Edwin D. Vinas (Golang/JS/HTML/CSS)
-- Christine T. Cunanan (UI/Testing/ContentManagement)
-- (In memory of) Rammel D. Vinas (CorelDraw/Photoshop/Graphics)
-- Our seven indoor Khao Manee Cats and a lot of outdoor homeless/adopted cats!
-- Google Search, Wikipedia and other reference materials!
-- StackOverflow, Reddit, W3Schools and all resources with code samples!
-- Github open-source libraries!
-- Alessio Atzeni -- Developer of Mac OSX desktop UI (http://www.alessioatzeni.com/mac-osx-lion-css3/)
-- ed_g2s of Sourceforge -- Developer of Javascript Windowing system used (http://jswm.sourceforge.net)
-- And all the developers of other free/opensource libraries integrated with ULAPPH (see them under the import section)
-
-Troubleshooting
-----------------
-Here are some errors you may encounter while installing or running the source codes!
-
-ERRORS
--------
-1) ERROR: createHTTPTask: cloudtasks.CreateTask: rpc error: code = PermissionDenied desc = Cloud Tasks API has not been used in project 255989709567 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudtasks.googleapis.com/overview?project=255989709567 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
-- Just enable the CloudTask API
-- Also create a queue
-    gcloud tasks queues create [QUEUE_ID]
-    gcloud tasks queues create ulapph
-2) Upload the AI files
-
-
-Change History
-----------------
-EDV - 1/15/2022 - Created change history; updated README
+```
