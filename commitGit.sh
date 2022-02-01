@@ -1,14 +1,13 @@
 #!/bin/bash
-# commitGit.sh 202004120946PM
-if [[ $@ == "" ]]
+
+echo Enter commit message 
+read varMsg
+
+
+if [[ $varMsg == "" ]]
 then
 	echo "ERROR: No commit message indicated"
-	echo "Example:"
-	echo "./commitGit.sh my sample mssage"
 	exit 0
-#else
-#	echo "Commit message:"
-#	echo "$@"
 fi
 
 rm *.exe~
@@ -17,10 +16,5 @@ rm main.go.deployed
 rm my.db
 rm my.db.lock
 git add --all
-git commit -m '$@'
-git push origin master
-
-git add --all
-git commit -m '$@'
-#git push google master
+git commit -m "$varMsg"
 git push origin master
