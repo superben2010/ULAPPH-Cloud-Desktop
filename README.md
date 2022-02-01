@@ -4,13 +4,10 @@
 
 Too Long; Dont Read (TL;DR)
 ----------------
-- Watch the latest demo video here https://www.youtube.com/channel/UCfmBlIM8pbOs3Vaq1lTZ22Q
-- If given access, you can try the latest version at https://www.ulapph.com
-- But for now, the live demo version is not accessible to the public due to cloud usage cost.
-- ULAPPH is personally developed using Go or Golang programming language.
-- ULAPPH is not a commercial product hence the demo site is not available publicly.
-- ULAPPH is simply a product of my hobby with a goal to become productive and learn Golang!
-- It's been tried to run as standalone server inside Docker Desktop, Android Termux, Linux machine, Windows 10 machine or in Google Appegine Standard or in Google Cloud Run or Kubernetes as a docker container in any cloud provider.
+- Watch the latest demo video here https://www.youtube.com/embed/VL-9y36O4Lg
+- ULAPPH was developed using Go or Golang programming language and JS/HTML/CSS codes
+- ULAPPH could run inside Docker Desktop, Android Termux, Linux machine, Windows 10 machine or in Google Appegine Standard, Google Cloud Run or Kubernetes
+- The goal of this system is to provide a Windows-like or MacOS-like desktop interface while providing productivity tools and integrations
 
 Versions
 --------------
@@ -112,9 +109,15 @@ Sample Uses of ULAPPH
     - A free publicly accessible demo website of ULAPPH Cloud Desktop. Latest code may not be always deployed here.
     - Access to the site may not be always available due to free quota account only.
 
+### Virtual Agent - TBD
+- https://va.ulapph.com
+    - Inside each ULAPPH installation is a virtual agent or a group of chatbots which can be programmed using IBM Watson Assistant and Javascript codes residing in Google Cloud Storage
+    - It uses custom chatbot orchestrator which makes it possible to develop business logic and different use cases
+
 ### ULAPPH News Stream Channel
 - https://www.youtube.com/channel/UCKgcONV17i0yRW4t3ogla2w/videos
     - A news stream automatically generated from ULAPPH Cloud Desktop.
+    - If you have no time to browse different news channels, you can let ULAPPH read the news for you!
 
 
 Troubleshooting
