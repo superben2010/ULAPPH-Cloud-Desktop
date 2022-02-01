@@ -29772,7 +29772,7 @@ func listDesktops(w http.ResponseWriter, r *http.Request, uid string) string {
 							//buf2.WriteString(fmt.Sprintf("				</li>\n"))
 
 							buf2.WriteString(fmt.Sprintf("				<li>\n"))
-							buf2.WriteString(fmt.Sprintf("				<a href=\"#page\" onmouseenter=\"playAudio();\" onclick=\"funcSetTopicFromCats('%v'); return false\">Show News</a>", thisDesc))
+							buf2.WriteString(fmt.Sprintf("				<a href=\"#page\" class=\"deskcat\" onmouseenter=\"playAudio();\" onclick=\"funcSetTopicFromCats('%v'); return false\">Show News</a>", thisDesc))
 							buf2.WriteString(fmt.Sprintf("				</li>\n"))
 							
 							//
@@ -29815,7 +29815,7 @@ func listDesktops(w http.ResponseWriter, r *http.Request, uid string) string {
 							//buf2.WriteString(fmt.Sprintf("				<li class=\"divider\"></li>\n"))
 							
 							buf2.WriteString(fmt.Sprintf("				<li>\n"))
-							buf2.WriteString(fmt.Sprintf("				<a href=\"#page\" onmouseenter=\"playAudio();\" onclick=\"funcSetTopicFromCats('%v'); return false\">Show News</a>", thisDesc))
+							buf2.WriteString(fmt.Sprintf("				<a href=\"#page\" class=\"deskcat\" onmouseenter=\"playAudio();\" onclick=\"funcSetTopicFromCats('%v'); return false\">Show News</a>", thisDesc))
 							buf2.WriteString(fmt.Sprintf("				</li>\n"))
 							//
 							//buf2.WriteString(fmt.Sprintf("			<li class=\"divider\"></li>\n"))

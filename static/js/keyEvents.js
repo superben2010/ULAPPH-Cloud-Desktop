@@ -32,7 +32,8 @@ function handleBodyKeyDown(event) {
 	case 40: //down arrow key
 		console.log("down arrow key");
 		if (localStorage[root+"news"] == "on") {
-			selectRandomDesktop();
+			//selectRandomDesktop();
+			topicSetter();
 		} else if (localStorage[root+'isStreaming'] == 'Y') {
 			scanCctvStream("O");
 		} else {
@@ -58,7 +59,8 @@ function handleBodyKeyDown(event) {
 	case 38: //up arrow key
 		console.log("up arrow key");
 		if (localStorage[root+"news"] == "on") {
-			selectRandomDesktop();
+			//selectRandomDesktop();
+			topicSetter();
 		} else if (localStorage[root+'isStreaming'] == 'Y') {
 			scanCctvStream("C");
 		} else {

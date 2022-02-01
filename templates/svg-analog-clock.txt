@@ -188,6 +188,8 @@
 	<option value="+14:00">(GMT +14:00) Line Islands, Tokelau</option>
 </select>
 
+[<a href="https://www.worldtimebuddy.com/" target="wtb">Go to WorldTimeBuddy</a>]
+
 <script>
 function myFunction() {
   var x = document.getElementById("timezone-offset").value;

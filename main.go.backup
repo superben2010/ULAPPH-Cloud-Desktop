@@ -1,14 +1,13 @@
 //GAE_APP_DOM_ID#www.ulapph.com
-//LAST_UPGRADE#26/08/2021 05:38:00 AM PST
-//TOTAL_LINES#89633
+//LAST_UPGRADE#15/01/2022 10:51:00 PM PST
+//TOTAL_LINES#90731
 //DO NOT REMOVE ABOVE LINE///////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // ULAPPH CLOUD DESKTOP SYSTEM
-// ULAPPH Cloud Desktop is a web-based desktop that runs on Google cloud platform and accessible 
-// via browsers on different PC and mobile devices.
+// ULAPPH Cloud Desktop is an opensource web-based desktop written in Golang and other opensource libraries
 // COPYRIGHT (c) 2014-2017 Edwin D. Vinas, Ulapph Cloud Desktop System
 // COPYRIGHT (c) 2017-2019 Edwin D. Vinas, ULAPPH Cloud Desktop, Opensource Version
-// COPYRIGHT (c) 2020-2021 Edwin D. Vinas, ULAPPH Cloud Desktop, Opensource Version, Go 1.13, Containerized
+// COPYRIGHT (c) 2020-2022 Edwin D. Vinas, ULAPPH Cloud Desktop, Opensource Version, Go 1.13, Containerized
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //REV ID: 		D0001
 //REV DATE: 	2014-Sep-02
@@ -574,6 +573,11 @@
 //REV ID: 		D0113
 //REV DATE: 	2021-Dec-25
 //REV DESC:	  	Added custom search configuration
+//REV AUTH:		Edwin D. Vinas
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//REV ID: 		D0114
+//REV DATE: 	2022-Jan-15
+//REV DESC:	  	Released new version "Barbecue"
 //REV AUTH:		Edwin D. Vinas
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1307,7 +1311,6 @@ const (
     FIXED_WALLPAPER_IMG = ``
 	//Use only system wallpaper
     SYS_DEFAULT_WALLPAPER = false
-    //edwinxxx
     SYS_DEFAULT_WALLPAPER_IMAGE="/static/img/wallpapers/3World-Map.jpg"
 	//when no wallpaper was set, use default list (indicate list and total)
 	WALLPAPERS_LIST_DEF_LST = ""
@@ -29769,7 +29772,7 @@ func listDesktops(w http.ResponseWriter, r *http.Request, uid string) string {
 							//buf2.WriteString(fmt.Sprintf("				</li>\n"))
 
 							buf2.WriteString(fmt.Sprintf("				<li>\n"))
-							buf2.WriteString(fmt.Sprintf("				<a href=\"#page\" onmouseenter=\"playAudio();\" onclick=\"funcSetTopicFromCats('%v'); return false\">Show News</a>", thisDesc))
+							buf2.WriteString(fmt.Sprintf("				<a href=\"#page\" class=\"deskcat\" onmouseenter=\"playAudio();\" onclick=\"funcSetTopicFromCats('%v'); return false\">Show News</a>", thisDesc))
 							buf2.WriteString(fmt.Sprintf("				</li>\n"))
 							
 							//
@@ -29812,7 +29815,7 @@ func listDesktops(w http.ResponseWriter, r *http.Request, uid string) string {
 							//buf2.WriteString(fmt.Sprintf("				<li class=\"divider\"></li>\n"))
 							
 							buf2.WriteString(fmt.Sprintf("				<li>\n"))
-							buf2.WriteString(fmt.Sprintf("				<a href=\"#page\" onmouseenter=\"playAudio();\" onclick=\"funcSetTopicFromCats('%v'); return false\">Show News</a>", thisDesc))
+							buf2.WriteString(fmt.Sprintf("				<a href=\"#page\" class=\"deskcat\" onmouseenter=\"playAudio();\" onclick=\"funcSetTopicFromCats('%v'); return false\">Show News</a>", thisDesc))
 							buf2.WriteString(fmt.Sprintf("				</li>\n"))
 							//
 							//buf2.WriteString(fmt.Sprintf("			<li class=\"divider\"></li>\n"))
@@ -73130,7 +73133,7 @@ var MOTD_GeneralJSWM = template.Must(template.New("MOTD_GeneralJSWM").Parse(`
   </ul>
  </nav>
 	<style>.w3-animate-input{transition:width 0.4s ease-in-out}.w3-animate-input:focus{width:30%!important}.w3-input{padding:8px;display:block;border:none;border-bottom:1px solid #ccc;width:30%}</style>
-	<center><input id="newJSWM999" type="text" onfocus="disableKeys();" onkeypress="return searchKeyPress(event);" class="w3-input w3-animate-input" style="width:300px; border-radius: 25px; border: 10px solid {{.}}; height: 15px; font-size: 20px;" value="Chat with AI..."></center>
+	<center><input id="newJSWM999" type="text" onfocus="disableKeys();" onkeypress="return searchKeyPress(event);" class="w3-input w3-animate-input" style="width:300px; border-radius: 25px; border: 10px solid {{.}}; height: 15px; font-size: 20px;" value="I'm ULAPPH Barbecue!"></center>
 	<button id="myBtn" onclick="javascript:newBotMessage2('999')" style="visibility:hidden;">Send</button>
 	<script>
 	function disableKeys() {

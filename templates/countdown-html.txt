@@ -139,7 +139,7 @@ h1 {
 <body>
 	<div class="flex-container">
 		<div class="clock-container">
-			<h1 id="title">{{.STR_FILLER1}}</h1>
+			<h1 id="title" contenteditable="true">{{.STR_FILLER1}}</h1>
 			<div class="clock" id="clockdiv">
 			  <div>
 				<span class="days"></span>

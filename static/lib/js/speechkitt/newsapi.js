@@ -27,6 +27,22 @@ if (localStorage[root+'isStreaming'] == 'Y') {
 alertify.set({
 	delay: 1000
 });
+//automatically loop through news categories
+var allElements = document.getElementsByTagName('*');
+const cats = [];
+for ( var i = 0; i<allElements.length; i++ ) {
+    if ( allElements[i].className !== 'deskcat' ) {
+        continue;
+    }
+    var myocType = typeof allElements[i].onclick;
+    if ( typeof allElements[i].onclick === 'function' ) {
+        var thisOc = String(allElements[i].onclick);
+        var ocSplit = thisOc.split("\'");
+        cats.push(ocSplit[1]);
+    }
+}
+localStorage['categories-list'] = cats;
+
 //show news after 10s
 var newsShow = document.getElementById("newss").value;
 var newsFetch = document.getElementById("newsf").value;
@@ -55,6 +71,27 @@ function shuffle(array) {
     array[randomIndex] = temporaryValue;
   }
   return array;
+}
+//regular intervals
+//setInterval(function(){ topicSetter()}, 600000) //10 minutes
+setInterval(function(){ topicSetter()}, 300000) //5 minutes
+var tsIndex = 0;
+function topicSetter () {
+	if (localStorage[root+"news"] == "on") {
+	    var tsText = localStorage['categories-list'];
+	    var sText = tsText.split(",");
+	    var sLength = sText.length - 1;
+	    if (tsIndex <= sLength) { 
+	        //console.log("tsIndex: " + tsIndex);
+	        //console.log("Setting topic: " + sText[tsIndex]);
+	        funcSetTopic(sText[tsIndex]);
+	        tsIndex = tsIndex + 1;
+	        //console.log("tsIndex New: " + tsIndex);
+	    }
+	    if (tsIndex == sLength) {
+	    	tsIndex = 0 //reset
+	    }
+	}
 }
 function newsStream() {
 	consoleLogger("newsStream()");
@@ -252,12 +289,14 @@ funcshow = function () {
             var pdate = thisItem["publishedAt"];
 			consoleLogger("pdate:"+pdate);
             if (title !== "") {
+            	var root = location.protocol + '//' + location.host;
                 FL_FOUND = true;
+                FL_VALID_URL = false;
                 if (ValidURL(img) == true) {
                     document.getElementById('page').style.backgroundImage = "url(" + img + ")";
                     //save local storage
-                    var root = location.protocol + '//' + location.host;
                     localStorage[root+"UWM_WALLP"+desktop] = bgImgUrl;
+                    FL_VALID_URL = true;
                 }
 				var cSource = localStorage[root+"newsapicountryname"];
 				/*if (cSource != undefined) {
@@ -280,13 +319,18 @@ funcshow = function () {
                 //strip urls
                 msgText = msgText.replace(/(?:https?|ftp):\/\/[\n\S]+/g, '');
 				//translate if needed
-                if (localStorage["speechkitt-listen-mode"] == "N" || localStorage["speechkitt-listen-mode"] == undefined) {
+                if (FL_VALID_URL == true && localStorage["speechkitt-listen-mode"] == "N" || localStorage["speechkitt-listen-mode"] == undefined) {
 					consoleLogger(msgText);
+					localStorage[root + 'quite-flag'] = "off";
+					localStorage[root+'speakingNow'] = 'N';
                     speakMessage(msgText);
 					alertify.set({
 						delay: 120000
 					});
-					alertify.log("NEWS: "+msgText+"<br>"+"VIEW: <a href='" + url +  "' target='" + url + "'>News</a> | <a href='" + img +  "' target='" + img + "'>Image</a> | NEXT: <a href='#' onClick=\"stopTalking();funcshow();return false;\">Next</a> | STOP: <a href='#' onClick=\"stopTalking();return false;\">Stop</a> | DATE: " + pdate);
+					//get qr code
+					var qrLink = "https://chart.googleapis.com/chart?cht=qr&chs=340x340&chl=" + url+ "&choe=UTF-8";
+					var qrLink2 = "https://chart.googleapis.com/chart?cht=qr&chs=500x500&chl=" + url+ "&choe=UTF-8";
+					alertify.log("NEWS: "+msgText+"<br>"+"VIEW: <a href='" + url +  "' target='" + url + "'>News</a> | <a href='" + img +  "' target='" + img + "'>Image</a> | NEXT: <a href='#' onClick=\"stopTalking();funcshow();return false;\">Next</a> | STOP: <a href='#' onClick=\"stopTalking();return false;\">Stop</a> | DATE: " + pdate + "<br><a href='" + qrLink2 +  "' target='" + qrLink2 + "'><img src=" + qrLink + " width=\"150\" height=\"150\"></img></a><img src=" + img + " width=\"150\" height=\"150\"></img>");
                 }
                 curIndex = curIndex + 1;
             }
