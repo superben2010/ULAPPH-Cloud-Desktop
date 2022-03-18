@@ -213,5 +213,25 @@ mv $GOPATH/src/github.com/tdewolff/minify/* $GOPATH/src/github.com/tdewolff/mini
 mkdir $GOPATH/src/github.com/edwindvinas/redis/v7
 mv $GOPATH/src/github.com/edwindvinas/redis/* $GOPATH/src/github.com/edwindvinas/redis/v7/
 
+# Added due to gcp gce ubuntu install
+go mod download cloud.google.com/go/datastore
+go mod download cloud.google.com/go/storage
+go get github.com/edwindvinas/go-cache
+go get github.com/edwindvinas/redis/v7
+go get github.com/edwindvinas/sprig
+go get github.com/edwindvinas/ytdl
+go mod download github.com/gorilla/websocket
+go get github.com/robfig/cron
+go get github.com/tdewolff/minify/v2
+go get github.com/tdewolff/minify/v2/css
+go get github.com/tdewolff/minify/v2/html
+go get github.com/tdewolff/minify/v2/js
+go get github.com/tdewolff/minify/v2/json
+go get github.com/tdewolff/minify/v2/svg
+go get github.com/tdewolff/minify/v2/xml
+go get github.com/watson-developer-cloud/go-sdk/assistantv2
+go mod download gopkg.in/yaml.v2
+
+
 echo "you may ignore mv errors..."
 echo "done!"
