@@ -1,5 +1,5 @@
 //GAE_APP_DOM_ID#www.ulapph.com
-//LAST_UPGRADE#15/01/2022 10:51:00 PM PST
+//LAST_UPGRADE#05/02/2022 11:46:00 PM PST
 //TOTAL_LINES#90731
 //DO NOT REMOVE ABOVE LINE///////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -580,6 +580,16 @@
 //REV DESC:	  	Released new version "Barbecue"
 //REV AUTH:		Edwin D. Vinas
 /////////////////////////////////////////////////////////////////////////////////////////////////
+//REV ID: 		D0115
+//REV DATE: 	2022-Feb-05
+//REV DESC:	  	Added shopping cart
+//REV AUTH:		Edwin D. Vinas
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//REV ID: 		D0116
+//REV DATE: 	2022-Feb-12
+//REV DESC:	  	Added /fs path for serving static pages using slides & articles
+//REV AUTH:		Edwin D. Vinas
+/////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //---------------------------------------------------------------------------------------------
 //List of firebase channels
@@ -732,6 +742,8 @@ import (
 	"github.com/gorilla/websocket"
 	//D0105
 	"github.com/robfig/cron"
+	//D0116
+	"gopkg.in/yaml.v2"
 )
 //main function
 func main() {   
@@ -741,7 +753,14 @@ func main() {
 		http.Handle("/static/", http.StripPrefix("/static/", fs))
 	}
     http.HandleFunc("/", root)
+    //D0115
+	http.HandleFunc("/products", handleFuncProducts)
+	http.HandleFunc("/cart", handleFuncCart)
+	http.HandleFunc("/process", handleFuncProcess)
+        
     http.HandleFunc("/go", ulapphGo)
+    //D0116
+    http.HandleFunc("/goserve", ulapphGoServe)
     http.HandleFunc("/bible", ulapphBible)
     http.HandleFunc("/todos", ulapphTodos)
     http.HandleFunc("/gps", ulapphGPS)
@@ -1311,7 +1330,7 @@ const (
     FIXED_WALLPAPER_IMG = ``
 	//Use only system wallpaper
     SYS_DEFAULT_WALLPAPER = false
-    SYS_DEFAULT_WALLPAPER_IMAGE="/static/img/wallpapers/3World-Map.jpg"
+    SYS_DEFAULT_WALLPAPER_IMAGE="/static/img/18CPU.jpg"
 	//when no wallpaper was set, use default list (indicate list and total)
 	WALLPAPERS_LIST_DEF_LST = ""
 	WALLPAPERS_LIST_DEF_TOT = "20"
@@ -1553,6 +1572,12 @@ const (
 // !!!CONFIG-ENDS-HERE!!!
 ///////////////////////////////////////////////////////////////		
 )
+//D0116
+var MEM_CUSTOM_HOMEPAGE_THEME = ""
+var ulapphWebYaml = new(ulapphWeb)
+var sysCacheStr = map[string]string{
+"SYSTEM_HOMEPAGE_SETTINGS":"",
+}
 //D0105
 var cronJob = cron.New()
 //D0096
@@ -1582,6 +1607,83 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 
 }
+//D0115
+//Data struct for Product table
+type Product struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
+	Price float64 `json:"price"`
+}
+
+//Data struct for Cart table
+type Cart struct {
+	Owner string `json:"owner"`
+	Code string `json:"code"`
+	Name string `json:"name"`
+	Price float64 `json:"price"`
+	Items int64 `json:"items"`
+	Status bool `json:"status"`
+}
+
+//Data struct for Total Amount and Overall Items
+type CartProc struct {
+	Total float64 `json:"total"`
+	Rules map[string]string  `json:"rules"`
+	Current []Cart `json:"current"`
+}
+//Data struct for Showing Rules
+type CartRules struct {
+	Type string `json:"type"`
+	Code string  `json:"code"`
+	Value string `json:"value"`
+}
+//D0115
+//Rules for BuyThreePayTwoOnly
+//If you buy 3 items, you pay only two items
+//In reality this could come from a database or external config which can be updated anytime
+var Rule_BuyThreePayTwoOnly = map[string]bool{"ult_small":true,
+}
+
+//Rules for BulkDiscountMoreThanThree
+//The price will drop to $$ each for the first month, if the customer buys more than x items.
+//In reality this could come from a database or external config which can be updated anytime
+var Rule_BulkDiscountMoreThanThree = map[string]float64{"ult_large":39.90,
+}
+
+//Rules for BundleFreeForEveryItemBought
+//We will bundle in a free item X free-of-charge with every Y sold
+//In reality this could come from a database or external config which can be updated anytime
+var Rule_BundleFreeForEveryItemBought = map[string]string{"ult_medium":"1gb",
+}
+
+//Rules for PromoCodeDiscount
+//Adding the promo code X will apply a $$ discount across the board.
+//In reality this could come from a database or external config which can be updated anytime
+var Rule_PromoCodeDiscount = map[string]float64{"I<3AMAYSIM":10,
+}
+//D0015-end
+//D0116-start
+type ulapphWeb struct {
+	Domain       string `yaml:"domain"`
+	Site       string `yaml:"site"`
+	Developer       string `yaml:"developer"`
+	ContentsDir		string `yaml:"contentsDir"`
+	TemplatesDir		string `yaml:"templatesDir"`
+	Pages []PageObject `yaml:"pages"`
+}
+
+type PageObject struct {
+	Page struct {
+		ID string   `yaml:"id"`
+		File string   `yaml:"file"`
+		Type string   `yaml:"type"`
+		Template string   `yaml:"template"`
+		Description string   `yaml:"desc"`
+		Access string   `yaml:"access"`
+	} `yaml:"page"`
+}
+//D0116-end
+
 //D0107
 //Angular File Manager
 type AfmResponseData struct {
@@ -4528,6 +4630,10 @@ func laterQueueAdsLogViews(c context.Context, adsID, uid, DESKTOP, ruleNumStr, x
 	if SYS_STATELESS_SERVER == true {
 		return
 	}
+	//D0116
+	if SYS_LOG_ACTIVITY == false {
+		return
+	}
     //log.Printf("laterQueueAdsLogViews")
     url := "/ulapph-router?RTR_FUNC=queue-ads-log-views"
     data := map[string]string{"ADS_ID": adsID, "uid": uid, "desktop": DESKTOP, "RULE_NUM_STR": ruleNumStr, "country": xCountry, "region": xRegion, "city": xCity, "uaPlatform": uaPlatform, "nameb": nameb, "uReferer": uReferer, "ipAdd": ipAdd}
@@ -4623,7 +4729,8 @@ func laterAutoML(c context.Context, FUNC, LABEL, UID, TITLE, STRUWM, IMG string)
 }
 //D0095
 //D0086
-func createClientDS(w http.ResponseWriter, r *http.Request) *datastore.Client {
+//func createClientDS(w http.ResponseWriter, r *http.Request) *datastore.Client {
+func createClientDS() *datastore.Client {
 	if SYS_STATELESS_SERVER == true {
 		return nil
 	}
@@ -5030,7 +5137,7 @@ func root(w http.ResponseWriter, r *http.Request) {
 			
               // get a specific record from NoSQL database
               //D0086
-              datastoreClient := createClientDS(w,r)
+              datastoreClient := createClientDS()
               var e Channelstore
 			  //if err := datastoreClient.Get(c, getKeyChannel(c,ChanID), &e); err != nil {
               //log.Printf("datastoreClient.Get()  [4795]")
@@ -5590,7 +5697,7 @@ func getHomeStatsNums(w http.ResponseWriter, r *http.Request, uid, TARGET, NAME,
     c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSSTATS").Filter("VAL_TXT = ", TARGET)
 	//log.Panicf("[S0001]")
     recCount,_ := datastoreClient.Count(c,q)
@@ -5773,7 +5880,7 @@ func createChannel(w http.ResponseWriter, r *http.Request) {
   FL_CHAN_EXIST := true
   tok := ""
   //D0086
-  datastoreClient := createClientDS(w,r)
+  datastoreClient := createClientDS()
   //log.Printf("datastoreClient.Get()  [5539]")
   if err := datastoreClient.Get(c, getKeyChannel(c,ChanID), &e); err != nil {
 		FL_CHAN_EXIST = false
@@ -5873,7 +5980,7 @@ func createToken(w http.ResponseWriter, r *http.Request, ChanID, recType string)
   FL_CHAN_EXIST := true
   tok := ""
   //D0086
-  datastoreClient := createClientDS(w,r)
+  datastoreClient := createClientDS()
   //log.Printf("datastoreClient.Get()  [5619]")
   if err := datastoreClient.Get(c, getKeyChannel(c,ChanID), &e); err != nil {
 	  FL_CHAN_EXIST = false
@@ -5948,7 +6055,7 @@ func createTokenChan(w http.ResponseWriter, r *http.Request, thisChan chan Token
   var e Channelstore
   FL_CHAN_EXIST := true
   //D0086
-  datastoreClient := createClientDS(w,r)
+  datastoreClient := createClientDS()
   //log.Printf("datastoreClient.Get()  [5694]")
   if err := datastoreClient.Get(c, getKeyChannel(c,ChanID), &e); err != nil {
 	  FL_CHAN_EXIST = false
@@ -6013,7 +6120,7 @@ func newChannelPut(w http.ResponseWriter, r *http.Request, ChanID string, uid st
 				RecType: recType,
 		}
         //D0086
-        datastoreClient := createClientDS(w,r)
+        datastoreClient := createClientDS()
 		_, err := datastoreClient.Put(c, getKeyChannel(c,ChanID), &g)
 		//log.Printf("[S0002] datastoreClient.Put()")
 		if err != nil {
@@ -6163,7 +6270,7 @@ func channelMessageHandler(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
 	CHAN_FUNC := r.FormValue("CHAN_FUNC")
 	UID := fmt.Sprintf("%v",r.FormValue("UID"))
@@ -6561,6 +6668,10 @@ func sendChannelFirebase(w http.ResponseWriter, r *http.Request, topic string, p
 func sendMessage(w http.ResponseWriter, r *http.Request, UID string, MSG_FUNC string, CUST_MSG string, FROM, mapURL, SID string) {
 	//c := appengine.NewContext(r)
 	//u := user.Current(c)
+	//D0116
+	if SYS_REALTIME_NOTIFS == false {
+		return
+	}
     c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()	
 	if r.Header.Get("X-Goog-Authenticated-User-Email") != ""  {
@@ -6608,7 +6719,7 @@ func sendMessage(w http.ResponseWriter, r *http.Request, UID string, MSG_FUNC st
 		
       var g Channelstore
       //D0086
-      datastoreClient := createClientDS(w,r)
+      datastoreClient := createClientDS()
       //log.Printf("datastoreClient.Get()  [6350]")
 	  if err := datastoreClient.Get(c, getKeyChannel(c,UID), &g); err != nil {
 		  g.ChanID = randSeq(6)
@@ -6666,7 +6777,7 @@ func registration(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
 	oauth := r.FormValue("oprov")
     //u := user.Current(c)
@@ -7299,7 +7410,7 @@ func advertisement(w http.ResponseWriter, r *http.Request) {
 	//var buffer3 bytes.Buffer
 	if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//prevent access from other than ulapph pages
 	checkReferrer(w,r)
  
@@ -7737,6 +7848,141 @@ func displayOauthIcons(w http.ResponseWriter, r *http.Request, TARGET_URL, lref 
 	fmt.Fprintf(w, "</div>")
 	
 	return
+}
+//D0116
+//Executes content as template
+func ulapphGoServe(w http.ResponseWriter, r *http.Request) {
+	//c := appengine.NewContext(r)
+	log.Printf("ulapphGoServe()")
+	id := r.FormValue("id")
+	ulapphDebug(w,r, "info", fmt.Sprintf("id: %v", id))
+
+    c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+	//var buffer3 bytes.Buffer
+	if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
+	
+	//prevent access from other than ulapph pages
+	checkReferrer(w,r)
+	_, uid := checkSession(w,r)
+	FL_PROC_OK := validateAccess(w, r, "IS_VALID_USER",r.URL.String())
+	if FL_PROC_OK == false {return}
+
+	yamlRaw := []byte("")
+	if ulapphWebYaml.Domain == "" {
+		YAML_FILE_PATH := "./goserve/ulapphWeb.yaml"
+		ulapphDebug(w,r, "info", fmt.Sprintf("Opening YAML_FILE_PATH: %v", YAML_FILE_PATH))
+	    file, err := os.Open(YAML_FILE_PATH)
+	    if err != nil {
+	        log.Fatal(err)
+	    }
+	    defer file.Close()
+	    yamlRaw, err = ioutil.ReadAll(file)
+	    if err != nil {
+	        log.Fatal(err)
+	    }
+	}
+
+	//var yamlParsed ulapphWeb
+
+	err := yaml.Unmarshal(yamlRaw, &ulapphWebYaml)
+	if err != nil {
+		log.Fatalf("cannot unmarshal data: %v", err)
+	}
+	ulapphDebug(w,r, "info", fmt.Sprintf("ulapphWebYaml: %v", ulapphWebYaml))
+	ulapphDebug(w,r, "info", fmt.Sprintf("ulapphWebYaml.Domain: %#v", ulapphWebYaml.Domain))
+	ulapphDebug(w,r, "info", fmt.Sprintf("ulapphWebYaml.Pages: %#v", ulapphWebYaml.Pages))
+	ulapphDebug(w,r, "info", fmt.Sprintf("ulapphWebYaml.ContentsDir: %#v", ulapphWebYaml.ContentsDir))
+	//ulapphDebug(w,r, "info", fmt.Sprintf("ulapphWebYaml.Pages[1]: %#v", ulapphWebYaml.Pages[1]))
+
+	FL_FOUND_PAGE := false
+	CONTENT_TYPE := ""
+	CONTENT_FILE_PATH := ""
+	CONTENT_TEMPLATE_FILE_PATH := ""
+	for key, val := range ulapphWebYaml.Pages {
+		ulapphDebug(w,r, "info", fmt.Sprintf("KEY: %v", key))
+		ulapphDebug(w,r, "info", fmt.Sprintf("VAL: %v", val))
+		ulapphDebug(w,r, "info", fmt.Sprintf("ID: %v", val.Page.ID))
+		if val.Page.ID == id {
+			FL_FOUND_PAGE = true
+			CONTENT_TYPE = val.Page.Type
+			//if type not supplied, derive from filename
+			if CONTENT_TYPE == "" {
+				if strings.Index(strings.ToLower(val.Page.File), ".slide") != -1 {
+					//this is a slide
+					CONTENT_TYPE = "slide"
+				} else {
+					if strings.Index(strings.ToLower(val.Page.File), ".article") != -1 {
+						//this is an article
+						CONTENT_TYPE = "article"
+					} else {
+						//defult to article
+						CONTENT_TYPE = "article"
+					}
+				}
+
+			}
+			CONTENT_FILE_PATH = fmt.Sprintf("%v%v", ulapphWebYaml.ContentsDir, val.Page.File)
+			CONTENT_TEMPLATE_FILE_PATH = fmt.Sprintf("%v%v", ulapphWebYaml.TemplatesDir, val.Page.Template)
+			if val.Page.Template == "" {
+				if CONTENT_TYPE == "slide" {
+					//this is a slide
+					CONTENT_TEMPLATE_FILE_PATH = "./templates/slides-template-offline.txt"
+				} else {
+					CONTENT_TEMPLATE_FILE_PATH = "./templates/article-template-offline.txt"
+				}
+
+			}
+			break
+		}
+	}
+	if FL_FOUND_PAGE == false {
+		//id in parm does not have equivalent page in yaml
+		//display error
+		//display content
+		SYSMSGS := fmt.Sprintf("Error: Target page [%v] is not found! Please contact administrator for more info.", CONTENT_FILE_PATH)
+		go SENDSYSMSG(c, SYSMAIL, SYSMSGS, uid)
+		return
+	} else {
+		//parse the target file as per yaml
+		ulapphDebug(w,r, "info", fmt.Sprintf("Opening CONTENT_FILE_PATH: %v", CONTENT_FILE_PATH))
+	    file2, err := os.Open(CONTENT_FILE_PATH)
+	    if err != nil {
+	        log.Fatal(err)
+	    }
+	    defer file2.Close()
+	    contentRaw, err := ioutil.ReadAll(file2)
+	    if err != nil {
+	        log.Fatal(err)
+	    }
+
+		var lines []string
+		s := bufio.NewScanner(bytes.NewReader(contentRaw))
+		for s.Scan() {
+			lines = append(lines, fmt.Sprintf("%v", s.Text()))
+		}
+		doc, err := Parse4(w, r, &Lines{0, lines}, "ULAPPH-WEB", 0)
+		if err != nil {
+			panic(err)
+		}
+
+		var buf bytes.Buffer
+		templateFile := CONTENT_TEMPLATE_FILE_PATH
+		SL_TMP := ""
+		if strings.ToLower(CONTENT_TYPE) == "slide" {
+			SL_TMP = "SL"
+		} else {
+			SL_TMP = "AL"
+		}
+		if err := renderPresentation(w,r,&buf, templateFile, doc, SL_TMP); err != nil {
+			panic(err)
+		}
+		//display content
+		writeHTMLHeader(w, 200)
+		w.Write(buf.Bytes())
+		return
+	}
+
 }
 
 //D0037
@@ -8436,7 +8682,7 @@ func saveAutoCompsBlob(w http.ResponseWriter, r *http.Request, uid string, acb [
 	thisKey := fmt.Sprintf("SYSTEM_ACB_%v", uid)
     key := datastore.NameKey("TDSCNFG", thisKey, nil)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     //log.Printf("datastoreClient.Get()  [7984]")
 	if err := datastoreClient.Get(c, key, &g); err != nil {
 		//panic(err)
@@ -8585,7 +8831,6 @@ func adminSetup(w http.ResponseWriter, r *http.Request) {
     defer cancel()
 	if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
 	checkSysIns(w,r)
-
 	_, uid := checkSession(w,r)
 	FL_ADMIN_USER := false
 	if uid == ADMMAIL {
@@ -8601,7 +8846,7 @@ func adminSetup(w http.ResponseWriter, r *http.Request) {
 	//check if system is installed already
     q := datastore.NewQuery("TDSUSERS").Limit(1)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//log.Panicf("[S0017]")
     users := make([]TDSUSERS, 0, 1)
     //log.Printf("datastoreClient.Get()  [8151]")
@@ -9307,7 +9552,7 @@ func adminSetup(w http.ResponseWriter, r *http.Request) {
 				  thisKey := fmt.Sprintf("SYSTEM_SEARCH_SETTINGS")
                   key := datastore.NameKey("TDSCNFG", thisKey, nil)
                   //D0086
-                  datastoreClient := createClientDS(w,r)
+                  datastoreClient := createClientDS()
                   //log.Printf("datastoreClient.Get()  [8855]")
 				  if err := datastoreClient.Get(c, key, &g); err != nil {
 					msgDtl := fmt.Sprintf("[U00178a] ERROR: SYSTEM_SEARCH_SETTINGS does not exist yet. Go to Admin Setup to Set Search Settings.")
@@ -9343,7 +9588,7 @@ func adminSetup(w http.ResponseWriter, r *http.Request) {
 				  thisKey := fmt.Sprintf("SYSTEM_SEARCH_SETTINGS")
                   key := datastore.NameKey("TDSCNFG", thisKey, nil)
                   //D0086
-                  datastoreClient := createClientDS(w,r)
+                  datastoreClient := createClientDS()
                   //log.Printf("datastoreClient.Get()  [8891]")
 				  if err := datastoreClient.Get(c, key, &g); err != nil {
 					msgDtl := fmt.Sprintf("[U00178b] ERROR: SYSTEM_SEARCH_SETTINGS does not exist yet. Go to Admin Setup to Set Search Settings.")
@@ -11062,7 +11307,7 @@ func uwm(w http.ResponseWriter, r *http.Request) {
     h := r.Header
     if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
         var buffer bytes.Buffer
 		//if this a shared desktop, no need to login
 		TARGET_UWM := r.FormValue("u")
@@ -12289,7 +12534,7 @@ func checkSysIns(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSUSERS").Limit(1)
 	//log.Panicf("[S0063]")
     users := make([]TDSUSERS, 0, 1)
@@ -12653,7 +12898,7 @@ func getTDSCNFG(w http.ResponseWriter, r *http.Request, vtype int, cfgName strin
     c, cancel := context.WithCancel(context.Background())
 	defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	key := datastore.NameKey("TDSCNFG", cfgName, nil)
 	q := datastore.NewQuery("TDSCNFG").Filter("__key__ =", key)
 	//log.Panicf("[S0616]")
@@ -12906,7 +13151,6 @@ func showHomeGallery(w http.ResponseWriter, r *http.Request) {
 	}
 	return
 }
-
 //checks any homepage settings if any custom theme is to be used
 func checkHomepageSettings(w http.ResponseWriter, r *http.Request, uid, redirectURL string) {
     //c := appengine.NewContext(r)
@@ -12939,17 +13183,25 @@ func checkHomepageSettings(w http.ResponseWriter, r *http.Request, uid, redirect
 			//else use default
 			return
 		}
-		//get from settings
-		cKey := fmt.Sprintf("SYSTEM_HOMEPAGE_SETTINGS")
-		redURL = getStrMemcacheValueByKey(w,r,cKey)
-		if redURL != "" {
-			//ok
+		if sysCacheStr["SYSTEM_HOMEPAGE_SETTINGS"] != "" {
+			//get from memory
+			redURL = sysCacheStr["SYSTEM_HOMEPAGE_SETTINGS"]
+			
 		} else {
-			cfgName := "SYSTEM_HOMEPAGE_SETTINGS"
-			redURL, _ = getTDSCNFG(w,r,0,cfgName)
+			//get from settings
+			cKey := fmt.Sprintf("SYSTEM_HOMEPAGE_SETTINGS")
+			redURL = getStrMemcacheValueByKey(w,r,cKey)
 			if redURL != "" {
-				cKey := fmt.Sprintf("SYSTEM_HOMEPAGE_SETTINGS")
-				putStrToMemcacheWithoutExp(w,r,cKey,redURL)
+				//ok
+				sysCacheStr["SYSTEM_HOMEPAGE_SETTINGS"] = redURL
+			} else {
+				cfgName := "SYSTEM_HOMEPAGE_SETTINGS"
+				redURL, _ = getTDSCNFG(w,r,0,cfgName)
+				if redURL != "" {
+					cKey := fmt.Sprintf("SYSTEM_HOMEPAGE_SETTINGS")
+					putStrToMemcacheWithoutExp(w,r,cKey,redURL)
+					sysCacheStr["SYSTEM_HOMEPAGE_SETTINGS"] = redURL
+				}
 			}
 		}
 	}
@@ -13037,7 +13289,7 @@ func runTopicsHaveNeed(w http.ResponseWriter, r *http.Request, UID, mode string)
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)	
+    datastoreClient := createClientDS()	
 	//get from profile
 	q := datastore.NewQuery("TDSPROF").Filter("UID =", UID).Limit(1)
     profile := make([]TDSPROF, 0, 1)
@@ -13090,7 +13342,7 @@ func ulapphWall(w http.ResponseWriter, r *http.Request) {
 	WALL_FUNC := r.FormValue("WALL_FUNC")
     SYS_RC_HOST_LIST := getWallHosts(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	switch {
 	case WALL_FUNC == "SEND_MSG":
 		remHost := r.FormValue("remHost")
@@ -14170,7 +14422,7 @@ func contentsAll(w http.ResponseWriter, r *http.Request) {
 		if FL_PROC_OK == false {return}
     }
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	query := r.FormValue("q")
 	switch query {
 	case "SHOW_PER_LIST_MENU":
@@ -14692,7 +14944,7 @@ func parseAutocompEntries(w http.ResponseWriter, r *http.Request) {
 			thisKey := fmt.Sprintf("SYSTEM_ACB_%v", uid)
             key := datastore.NameKey("TDSCNFG", thisKey, nil)
             //D0086
-            datastoreClient := createClientDS(w,r)
+            datastoreClient := createClientDS()
             //log.Printf("datastoreClient.Get()  [14254]")
 			if err := datastoreClient.Get(c, key, &g); err != nil {
 				//return
@@ -15918,7 +16170,7 @@ func settings(w http.ResponseWriter, r *http.Request) {
 	checkReferrer(w,r)
 	if FL_PROC_OK := checkQuotaSystem(w, r); FL_PROC_OK != true {return}
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	_, uid := checkSession(w,r)
 	FL_PROC_OK := validateAccess(w, r, "IS_VALID_USER",r.URL.String())
 	if FL_PROC_OK == false {return}
@@ -16247,7 +16499,7 @@ func ranConGen(w http.ResponseWriter, r *http.Request) {
 	}
     checkReferrer(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	timestamp := getTimestamp()
 	//D0065
 	if SYS_DISP_ADS_CONTENT  == true {
@@ -17188,7 +17440,7 @@ func ulapphChat(w http.ResponseWriter, r *http.Request) {
 	MSG := r.FormValue("MESSAGE")
     token := ""
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	switch CHAT_FUNC {
 		case "connectChatRoom":
 			//allow user to connect to chatroom link via mini-browser
@@ -17901,7 +18153,10 @@ func ulapphChat(w http.ResponseWriter, r *http.Request) {
 
 //sends chat messages given the message and target roomID in firebase 
 func ulapphChatSender(w http.ResponseWriter, r *http.Request, UC_FUNC string, MSG, roomID string) {
-
+	//D0116
+	if SYS_REALTIME_NOTIFS == false {
+		return
+	}
 	switch UC_FUNC {
 		case "CH_MSG_NOTIFY_CHAT_ROOM":
 			//private chats
@@ -19225,7 +19480,7 @@ func ulapphStream(w http.ResponseWriter, r *http.Request) {
 	checkReferrer(w,r)
 	_, uid := checkSession(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	STR_FUNC := r.FormValue("STR_FUNC")
 	mode := r.FormValue("mode")
 	token := ""
@@ -19693,7 +19948,7 @@ func registerAccessCode(w http.ResponseWriter, r *http.Request, uid, SID, access
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if SID != "" {
 			SPL := strings.Split(SID,"-")
 			TARGET := SPL[0]
@@ -19850,7 +20105,7 @@ func ulapphDirectory(w http.ResponseWriter, r *http.Request) {
 	//serve real people only
     FL_IS_BOT := isBot(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	switch DIR_FUNC {
 		case "cctv-recent":
 			FL_PROC_OK := validateAccess(w, r, "IS_VALID_USER",r.URL.String())
@@ -20766,7 +21021,7 @@ func editor(w http.ResponseWriter, r *http.Request) {
 	    defer cancel()
     if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
     //D0086
-    datastoreClient := createClientDS(w,r)	
+    datastoreClient := createClientDS()	
 	uReferer := r.Referer()
 	EDIT_FUNC := r.FormValue("EDIT_FUNC")
 	EDIT_FUNC2 := r.FormValue("EDIT_FUNC2")
@@ -23133,7 +23388,7 @@ func ranAdsGen(w http.ResponseWriter, r *http.Request) {
 								var e Channelstore
                                 FL_CHAN_EXIST := true
                                 //D0086
-                                datastoreClient := createClientDS(w,r)
+                                datastoreClient := createClientDS()
                                 //log.Printf("datastoreClient.Get()  [22432]")
 								if err := datastoreClient.Get(c, getKeyChannel(c,LC_UID), &e); err != nil {
 									FL_CHAN_EXIST = false
@@ -23460,7 +23715,7 @@ func deleteTodos(w http.ResponseWriter, r *http.Request, uid string) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     //q := datastore.NewQuery("Todo").KeysOnly()
 	//q := datastore.NewQuery("Todo").Filter("Owner=", uid).KeysOnly()
 	q := datastore.NewQuery("Todo").Ancestor(defaultTodoList(c, uid)).KeysOnly()
@@ -23480,7 +23735,7 @@ func archiveDoneTodos(w http.ResponseWriter, r *http.Request, uid string) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     //q := datastore.NewQuery("Todo").KeysOnly()
 	//q := datastore.NewQuery("Todo").Filter("Done=", true).Filter("O=", true).FilKeysOnly()
 	q := datastore.NewQuery("Todo").Ancestor(defaultTodoList(c, uid)).Filter("Done=", true).KeysOnly()
@@ -23504,7 +23759,7 @@ func updateTodo(w http.ResponseWriter, r *http.Request,uid,stat,todo string) {
 	//log.Printf("stat: %v", stat)
 	//log.Printf("todo: %v", todo)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if todo != "" {
 		//update items
 		q := datastore.NewQuery("Todo").Order("Done")
@@ -24397,8 +24652,15 @@ func ulapphTools(w http.ResponseWriter, r *http.Request) {
 				//log.Printf("uid: %v", uid)
 				SID := getCustomSearchSource(w,r,uid)
 				if SID == "" {
-					log.Panicf("Invalid SID!")
-					fmt.Fprintf(w, "No custom search source has been set for user %v.", uid)
+					//log.Panicf("Invalid SID!")
+					//fmt.Fprintf(w, "No custom search source has been set for user %v.", uid)
+					//return
+					msgDtl := "[U00204]ERROR: Custom Search Source not defined."
+					msgTyp := "error"
+					msgURL := "/"
+					action := fmt.Sprintf("To fix, please create a custom search source.")
+					sysReq := fmt.Sprintf("/sysmsg?msgTyp=%v&message=%v&msgURL=%v&action=%v", msgTyp, msgDtl, msgURL, action)
+					http.Redirect(w, r, sysReq, http.StatusFound)
 					return					
 				}
 				BLOB_KEY := contentCheckSid(w,r,SID)
@@ -24850,7 +25112,7 @@ func ulapphTools(w http.ResponseWriter, r *http.Request) {
 		return
 	}
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 
 	if TOOL_FUNC == "CLR_AC" || TOOL_FUNC == "CLR_ACM" || TOOL_FUNC == "CLR_ACS" {
 		key := fmt.Sprintf("AUTOCOMP_CACHE_%v", uid)
@@ -25261,6 +25523,13 @@ func ulapphTools(w http.ResponseWriter, r *http.Request) {
 					//query TDSCNFG			
 					cfgName = fmt.Sprintf("PERSONAL_Default_Location_%v", uid)
 					userLoc, _ = getTDSCNFG(w,r,0,cfgName)
+
+					//get voice
+					speechVoice := ""
+					//query TDSCNFG			
+					cfgName = fmt.Sprintf("PERSONAL_SpeechVoice_%v", uid)
+					speechVoice, _ = getTDSCNFG(w,r,0,cfgName)
+
                     var buf bytes.Buffer
                     for k, v := range uwmColors {
 						//log.Printf("key[%s] value[%s]\n", k, v)
@@ -25269,6 +25538,7 @@ func ulapphTools(w http.ResponseWriter, r *http.Request) {
                     if startColor == "#" || activeColor == "#" || inActiveColor == "#" {
                         startColor, activeColor, inActiveColor = getRandomColors()
                     }
+					//edwinxxx
 					TEMPDATA := TEMPSTRUCT2{
 						STR_FILLER1: alFlag,
 						STR_FILLER2: uid,
@@ -25280,6 +25550,7 @@ func ulapphTools(w http.ResponseWriter, r *http.Request) {
 						STR_FILLER8: appProvider,
 						STR_FILLER9: userPriv,
 						STR_FILLER10: userLoc,
+						STR_FILLER11: speechVoice,
 						BOOL_FILLER1: SYS_SUPER_USER,
 						NUM_FILLER1: uwmDocID,
 						//D0113
@@ -27095,7 +27366,7 @@ func people(w http.ResponseWriter, r *http.Request) {
 	PEOPLE_FUNC := r.FormValue("PEOPLE_FUNC")
     _, uid := checkSession(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	switch PEOPLE_FUNC {
 		case "CHECK-SYS1":
 			//check regularly for new eq
@@ -27882,7 +28153,7 @@ func infodb(w http.ResponseWriter, r *http.Request) {
 	uReferer := r.Referer()
 	DB_FUNC := r.FormValue("DB_FUNC")
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	_, uid := checkSession(w,r)
 	switch {
 			
@@ -28739,7 +29010,7 @@ func infodb(w http.ResponseWriter, r *http.Request) {
 			
             var g TDSLOGS
             //D0086
-            datastoreClient := createClientDS(w,r)
+            datastoreClient := createClientDS()
             //log.Printf("datastoreClient.Get()  [27818]")
             if err := datastoreClient.Get(c, getKeyAccess(c,accessLogKey), &g); err != nil {
 				//do nothing
@@ -28887,7 +29158,7 @@ func infodb(w http.ResponseWriter, r *http.Request) {
 			} else {
                 var g TDSLOGS
                 //D0086
-                datastoreClient := createClientDS(w,r)
+                datastoreClient := createClientDS()
 				if err := datastoreClient.Get(c, getKeyAccess(c,accessLogKey), &g); err != nil {
  
 				} else {
@@ -29696,7 +29967,7 @@ func deskNum2Name(w http.ResponseWriter, r *http.Request, uid, catName string) (
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//edv 08/10/2015
 	DESKNUM2NAME := ""
 	cKey := fmt.Sprintf("DESKNUM2NAME_%v", catName)
@@ -30084,7 +30355,7 @@ func listDesktopsIcons(w http.ResponseWriter, r *http.Request, uid string) []Ico
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	var dks []Icons
 	
 	cKey2 := "ICONS_LIST_JSON"
@@ -30347,7 +30618,7 @@ func validateToken(w http.ResponseWriter, r *http.Request, FUNC_CODE string, Cha
 				
               var e Channelstore
               //D0086
-              datastoreClient := createClientDS(w,r)
+              datastoreClient := createClientDS()
 			  if err := datastoreClient.Get(c, getKeyChannel(c,ChanID), &e); err != nil {
 				  //fmt.Fprintf(w, "FL_CHAN_EXIST = false")
 				  FL_CHAN_EXIST = false
@@ -30664,7 +30935,7 @@ func guestbook(w http.ResponseWriter, r *http.Request) {
 	UID := fmt.Sprintf("%v",r.FormValue("UID"))
     GB_FUNC := r.FormValue("GB_FUNC")
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if GB_FUNC == "KNOCK" {
 		if strings.Index(UID, "|") != -1 && strings.Index(UID, "http") != -1 {
 			//send to remote
@@ -31358,7 +31629,7 @@ func markMsgRead(w http.ResponseWriter, r *http.Request,mid string) (ctr int) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	key := datastore.NameKey("Greeting", mid, nil)
 	q := datastore.NewQuery("Greeting").Filter("__key__ =", key).Limit(1)
 	//log.Panicf("[S0200]")
@@ -31388,7 +31659,7 @@ func markMsgDelete(w http.ResponseWriter, r *http.Request,uid,mid string) (ok bo
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//i := strings.Index(mid, uid)
 	//if i == -1 {
 	//	return
@@ -31638,7 +31909,7 @@ func social(w http.ResponseWriter, r *http.Request) {
 	SO_FUNC := r.FormValue("SO_FUNC")
     _, uid := checkSession(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	switch SO_FUNC {
 		case "NEWSAPI":
 			//D0078
@@ -31863,7 +32134,7 @@ func social(w http.ResponseWriter, r *http.Request) {
 					//--check student record
                     key := datastore.NameKey("TDSCNFG", thisKey, nil)
                     //D0086
-                    datastoreClient := createClientDS(w,r)
+                    datastoreClient := createClientDS()
 					if err := datastoreClient.Get(c, key, &g); err != nil {
 						//panic(err)
 						//return
@@ -32711,7 +32982,7 @@ func viewProfile(w http.ResponseWriter, r *http.Request, UID, uid string) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 
 	FL_PROFILE_FOUND := false
 	q := datastore.NewQuery("TDSPROF").Filter("UID =", UID).Limit(1)
@@ -33010,7 +33281,7 @@ func notifyGuestbook(w http.ResponseWriter, r *http.Request, NGB_FUNC string, UI
 	    defer cancel()
 	FL_UPDATE_GB_CACHE := false
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//uid := UID
 	switch NGB_FUNC {
 	
@@ -33539,7 +33810,7 @@ func getCountryPic(w http.ResponseWriter, r *http.Request, UID string) (COUNTRY_
 	
     //if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 
 	v := strings.Index(UID, "@")
 	z := strings.Index(UID, ".")
@@ -33674,7 +33945,7 @@ func adminIcons(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	_, uid := checkSession(w,r)
 	FL_PROC_OK := validateAccess(w, r, "IS_VALID_USER",r.URL.String())
 	if FL_PROC_OK == false {return}
@@ -33959,7 +34230,7 @@ func TASK_MEMCACHER_settingsAllIcons(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	var buffer3 bytes.Buffer
 	q := datastore.NewQuery("TDSICONS").Order("ICON_ID")
 	//log.Panicf("[S0226]")
@@ -34028,7 +34299,7 @@ func TASK_MEMCACHER_contentsAll_Icons(w http.ResponseWriter, r *http.Request, TA
 	var buffer3 bytes.Buffer
     //D0086
 	//uid := ""
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	switch TARGET {
 	
 		case "":
@@ -35663,7 +35934,7 @@ func TASK_MEMCACHER_API_GOOGLE_PLUS_UID(w http.ResponseWriter, r *http.Request, 
 		return
     }
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	
 	//get IHAVE and INEED details from cache
 	cKey := fmt.Sprintf("I_HAVE_TEXT_%v", UID)
@@ -35817,7 +36088,7 @@ func TASK_MEMCACHER_URL_FETCH_NOTIFS(w http.ResponseWriter, r *http.Request, fre
 		//check from DB
 		//display record as slides
 		//log.Printf("Checking users db...")
-		datastoreClient := createClientDS(w,r)
+		datastoreClient := createClientDS()
 		q := datastore.NewQuery("TDSUSERS").Order("-LOGGED_IN")
 		//log.Panicf("[S0157]")
 		recCount, _  := datastoreClient.Count(c,q)
@@ -36604,7 +36875,7 @@ func cacheProfilePic(w http.ResponseWriter, r *http.Request, uid string) string 
 	    defer cancel()
     //var buffer3 bytes.Buffer
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	PROFILE_PIC := ""
     cKey := fmt.Sprintf("PROFILE_PIC_%v", uid)
     PROFILE_PIC = getStrMemcacheValueByKey(w,r,cKey)
@@ -36647,7 +36918,7 @@ func TASK_MEMCACHER_contentsAll_Slides(w http.ResponseWriter, r *http.Request, T
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 
 	var buffer3 bytes.Buffer
 	//uid := ""
@@ -36778,7 +37049,7 @@ func TASK_MEMCACHER_contentsAll_Articles(w http.ResponseWriter, r *http.Request,
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	var buffer3 bytes.Buffer
 	//uid := ""
 	switch TARGET {
@@ -36902,7 +37173,7 @@ func peopleEdit(w http.ResponseWriter, r *http.Request) {
 	
 	checkReferrer(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 
 	if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
     //c := appengine.NewContext(r)
@@ -37484,6 +37755,34 @@ func peopleEdit(w http.ResponseWriter, r *http.Request) {
 		putStrToMemcacheWithoutExp(w,r,cKey,"")
 		
 		fmt.Fprintf(w, "Apps provider has been set<br>.")
+
+	//edwinxxx
+	case "SetSpeechVoice":
+		val := r.FormValue("VOICE")
+		cfgName := fmt.Sprintf("PERSONAL_SpeechVoice_%v", uid)
+		
+		g := TDSCNFG{
+				SYS_VER: 1,
+				USER: uid,
+				CFG_ID: cfgName,
+				DAT_TYP: "TXT",
+				NUM_VAL: 0,
+				TXT_VAL: val,
+				CFG_DESC: "Set speech voice",
+		}
+		key := datastore.NameKey("TDSCNFG", cfgName, nil)
+		if _, err := datastoreClient.Put(c, key, &g); err != nil {
+				panic(err)
+        }
+ 
+		//update cache
+		cKey := fmt.Sprintf("SPEECH_VOICE_%v", uid)
+		putStrToMemcacheWithoutExp(w,r,cKey,val)
+		
+		//cKey = "TOP_LIST_MENU_CACHE"
+		//putStrToMemcacheWithoutExp(w,r,cKey,"")
+		
+		fmt.Fprintf(w, "Speech voice has been set<br>.")
 		
 	case "SetPrivacy":
 		val := r.FormValue("PRIV")
@@ -38486,7 +38785,7 @@ func getCreditPoints(w http.ResponseWriter, r *http.Request, UID string) (credPt
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	ncNameStatsAccess := fmt.Sprintf("STATS.ACCESS.%s", UID)
  
 	cKey := fmt.Sprintf("TASK_MEMCACHER_CounterIncrement_%s", ncNameStatsAccess)
@@ -38527,7 +38826,7 @@ func adminAds(w http.ResponseWriter, r *http.Request) {
 	FL_PROC_OK := validateAccess(w, r, "IS_VALID_USER",r.URL.String())
 	if FL_PROC_OK == false {return}
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	uReferer := r.Referer()
 	
 	//get user privilege
@@ -40273,7 +40572,7 @@ func isValidUrl(w http.ResponseWriter, r *http.Request, tURL string) string {
 func adminSlides(w http.ResponseWriter, r *http.Request) {
 	checkReferrer(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
     //c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
@@ -41069,7 +41368,7 @@ func dispTopContents(w http.ResponseWriter, r *http.Request, deskName, DISP_CODE
 	//uid := uid
 	_, uid := checkSession(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	switch DISP_CODE {
 	
 	case "AJAX":
@@ -42844,7 +43143,7 @@ func dispTopContents(w http.ResponseWriter, r *http.Request, deskName, DISP_CODE
 func adminArticles(w http.ResponseWriter, r *http.Request) {
 	checkReferrer(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if FL_PROC_OK := countryChecker(w,r); FL_PROC_OK != true {return}
 	//c := appengine.NewContext(r)
 	c, cancel := context.WithCancel(context.Background())
@@ -43651,7 +43950,7 @@ func getPushContents(w http.ResponseWriter, r *http.Request, target string) stri
 	    defer cancel()
 	CACHE_DATA := ""
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//uid := ""
 	switch target {
 		
@@ -44151,7 +44450,7 @@ func ibmWatsonAssistant(w http.ResponseWriter, r *http.Request, wID, wAva, oMsg,
     if err != nil {
         log.Panicf("ERROR: %v", err)
     }
-	VOICE_NAME := ""
+	//VOICE_NAME := ""
     finText  := ""
     if jqResMsg != "" {
         //parse orch tag parameters from watson
@@ -44171,7 +44470,7 @@ func ibmWatsonAssistant(w http.ResponseWriter, r *http.Request, wID, wAva, oMsg,
 		//ulapphDebug(w,r, "info", fmt.Sprintf("finText: %v", finText))
 		ulapphDebug(w,r, "info", fmt.Sprintf("finText: %v", len(finText)))
 		//set voice
-		VOICE_NAME = fmt.Sprintf("VOICE_NAME_%v", html.EscapeString(oLocation))
+		//VOICE_NAME = fmt.Sprintf("VOICE_NAME_%v", html.EscapeString(oLocation))
 		
     }
     //Fix mobile speech issue (cant speak <silence msec='5000'/>)
@@ -44258,7 +44557,8 @@ func ibmWatsonAssistant(w http.ResponseWriter, r *http.Request, wID, wAva, oMsg,
 				OrchData: finText,
 				OrchWA: wID,
 				OrchLoc: oLoc,
-				OrchVoice: getVoiceSpeakerName(w,r,VOICE_NAME),
+				//OrchVoice: getVoiceSpeakerName(w,r,VOICE_NAME),
+				OrchVoice: getVoiceSpeakerName(w,r,oUser),
 				OrchIcon: wAva,
 			}
 			//log.Printf("ores: %#v", ores)
@@ -44275,7 +44575,10 @@ func ibmWatsonAssistant(w http.ResponseWriter, r *http.Request, wID, wAva, oMsg,
 		}
     }
 }
-func getVoiceSpeakerName(w http.ResponseWriter, r *http.Request, cKey string) string {
+//edwinxxx
+//func getVoiceSpeakerName(w http.ResponseWriter, r *http.Request, cKey string) string {
+	func getVoiceSpeakerName(w http.ResponseWriter, r *http.Request, uid string) string {
+	cKey := fmt.Sprintf("SPEECH_VOICE_%v", uid)
 	vName := getStrMemcacheValueByKey(w,r,cKey)
 	if vName == "" {
 		vName = "Microsoft David Desktop - English (United States)"
@@ -44795,7 +45098,7 @@ func ulapphNlp(w http.ResponseWriter, r *http.Request) {
 		if SR_BLOB == "" {
             key := datastore.NameKey("TDSCNFG", thisKey, nil)
             //D0086
-            datastoreClient := createClientDS(w,r)
+            datastoreClient := createClientDS()
 			if err := datastoreClient.Get(c, key, &g); err != nil {
 				//return
             }
@@ -45331,7 +45634,7 @@ func nlpAcbSearch(w http.ResponseWriter, r *http.Request, uid, target string) (s
 		thisKey := fmt.Sprintf("SYSTEM_ACB_%v", uid)
         key := datastore.NameKey("TDSCNFG", thisKey, nil)
         //D0086
-        datastoreClient := createClientDS(w,r)
+        datastoreClient := createClientDS()
 		if err := datastoreClient.Get(c, key, &g); err != nil {
 			//return
         }
@@ -45752,7 +46055,7 @@ func educEnroll(w http.ResponseWriter, r *http.Request, mSID, uid, level string)
     //check if there is student record
     //log.Printf("educEnroll")
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	resp := ""
 	EDUC_BLOB := ""
 	FL_EN := false
@@ -45860,7 +46163,7 @@ func getSchoolMasterRecord(w http.ResponseWriter, r *http.Request, mSID string) 
 	//--check school record
     key := datastore.NameKey("TDSCNFG", thisKey, nil)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if err := datastoreClient.Get(c, key, &g); err != nil {
 		//panic(err)
 		//return
@@ -45910,7 +46213,7 @@ func educSchoolMasterRecord(w http.ResponseWriter, r *http.Request, uid, score, 
 	//--check school record
     key := datastore.NameKey("TDSCNFG", thisKey, nil)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if err := datastoreClient.Get(c, key, &g); err != nil {
 		//panic(err)
 		//return
@@ -46035,7 +46338,7 @@ func checkEnroll(w http.ResponseWriter, r *http.Request, mSID, uid string) (stri
 	//log.Printf("thisKey: %v", thisKey)
     key := datastore.NameKey("TDSCNFG", thisKey, nil)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if err := datastoreClient.Get(c, key, &g); err != nil {
 		//panic(err)
 		//return
@@ -46102,7 +46405,7 @@ func cancelEnroll(w http.ResponseWriter, r *http.Request, mSID, uid, sLevel stri
 	//log.Printf("thisKey: %v", thisKey)
     key := datastore.NameKey("TDSCNFG", thisKey, nil)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if err := datastoreClient.Get(c, key, &g); err != nil {
 		//panic(err)
 		//return
@@ -46155,7 +46458,7 @@ func updateScores(w http.ResponseWriter, r *http.Request, mSID, uid string) (str
 	//log.Printf("thisKey: %v", thisKey)
     key := datastore.NameKey("TDSCNFG", thisKey, nil)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if err := datastoreClient.Get(c, key, &g); err != nil {
 		//panic(err)
 		//return
@@ -46498,7 +46801,7 @@ func ulapphThings(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	T_FUNC := r.FormValue("T_FUNC")
 	thingName := r.FormValue("thingName")
 	API_KEY_R := r.Header["Authorization"]
@@ -46991,7 +47294,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 	//h := r.Header
 	uReferer := r.Referer()
     //D0086
-    //datastoreClient := createClientDS(w,r)
+    //datastoreClient := createClientDS()
 
 	FUNC_CODE := r.FormValue("FUNC_CODE")
     //log.Printf("checkSession()")
@@ -46999,7 +47302,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 	switch {
 	//D0041
 	case FUNC_CODE == "GET_COMMENTS_COUNT":
-		datastoreClient := createClientDS(w,r)
+		datastoreClient := createClientDS()
 		API_KEY := r.FormValue("API_KEY")
 		SID := r.FormValue("SID")
 		if (CMD_API_KEY != API_KEY || SID == "") {
@@ -47015,7 +47318,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(fmt.Sprintf("%v",recCount)))
         return
 	case FUNC_CODE == "GET_RAN_MUSIC":
-		datastoreClient := createClientDS(w,r)
+		datastoreClient := createClientDS()
 		CURM := r.FormValue("CURM")
 		if uid == "" {
 			uid = "all"
@@ -47337,14 +47640,14 @@ func media(w http.ResponseWriter, r *http.Request) {
 		return
     case FUNC_CODE == "GET_RAN_WP":
         //log.Printf("uid: %v", uid)
-		if SYS_STATELESS_SERVER == true {
+		//if SYS_STATELESS_SERVER == true {
 			myrand, thisWpTitle, thisRanWp := getRandomWp()
 			if thisRanWp != "" {
 				resp := fmt.Sprintf("%v@888@%v@888@%v@888@%v", myrand, thisRanWp, thisWpTitle, thisWpTitle)
 				w.Write([]byte(resp))
 				return
 			}
-		}
+		//}
 		//send motd
 		cKeyF := fmt.Sprintf("MOTD_WAIT_%s", uid)
 		isWaitMotd := getStrMemcacheValueByKey(w,r,cKeyF)
@@ -47390,7 +47693,7 @@ func media(w http.ResponseWriter, r *http.Request) {
         FL_VALID_USER, _, _  , _ := usersProcessor(w, r, "au", uid, FUNC_CODE)
         //log.Printf("FL_VALID_USER: %v", FL_VALID_USER)
         //log.Printf("uid: %v", uid)
-		datastoreClient := createClientDS(w,r)
+		datastoreClient := createClientDS()
 		if FL_VALID_USER == true {
 			//if uwmWallpapers is not empty
 			myrand, thisWpTitle, thisRanWp := getRandomWp()
@@ -47488,7 +47791,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		wpTotal := str2int(WALLPAPERS_LIST_TOTAL)
-		myrand := 0
+		myrand = 0
 		if SEQ != "" {
 			//get sequential wp
 			myrand = intSeq + 1
@@ -47502,7 +47805,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		thisWpUrl := ""
-		thisWpTitle := ""
+		thisWpTitle = ""
 		thisWpDesc := ""
 		//get image based on array and random
 		//https://www.ulapph.com/static/img/Andromeda-Galaxy.jpg|Title|Description@888@
@@ -47559,7 +47862,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 		MEDIA_LIST_TOTAL := ""
 		MEDIA_LIST_ARRAY = getStrMemcacheValueByKey(w,r,cKey)
 		MEDIA_LIST_TOTAL = getStrMemcacheValueByKey(w,r,cKey2)
-		datastoreClient := createClientDS(w,r)
+		datastoreClient := createClientDS()
 		if MEDIA_LIST_ARRAY == "" || MEDIA_LIST_TOTAL == "" {
 		
 			recCtr := 0
@@ -47624,7 +47927,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 		return
 		
 	case FUNC_CODE == "GET_RAN_MUSIC": 	
-		datastoreClient := createClientDS(w,r)
+		datastoreClient := createClientDS()
 		uid := "all"
 		cKey := fmt.Sprintf("MUSIC_LIST_%v", uid)
 		cKey2 := fmt.Sprintf("MUSIC_TOTAL_%v", uid)
@@ -48106,7 +48409,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 			CATEGORY := fmt.Sprintf("%v",r.FormValue("CATEGORY"))
 			switch FUNC_CODE {
 				case "UPDATE":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
 					updateUserActiveData(w, r, c, uid, "/media(update)")
 					DATA_TYPE := strings.ToLower(r.FormValue("DATA_TYPE"))
 					MIME_TYPE := strings.ToLower(r.FormValue("MIME_TYPE"))
@@ -48274,7 +48577,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 					}
 				
 				case "PINNED_MEDIA":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
 					MEDIA_ID2 := r.FormValue("MEDIA_ID")
 					SYS_VER2 := r.FormValue("P")
 					MEDIA_ID := str2int(MEDIA_ID2)
@@ -48312,7 +48615,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 					return
  
 				case "ENC_MEDIA":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
 					MEDIA_ID2 := r.FormValue("MEDIA_ID")
 					SYS_VER2 := r.FormValue("P")
 					MEDIA_ID := str2int(MEDIA_ID2)
@@ -48360,7 +48663,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 					return
 					
 				case "SET_URLFETCH_LIST":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
 					MEDIA_ID2 := r.FormValue("MEDIA_ID")
 					MEDIA_ID := str2int(MEDIA_ID2)
 					cfgName := fmt.Sprintf("SYSTEM_URLFETCH_Media_ID_%v", uid)
@@ -48441,7 +48744,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 					}
 					return
 				case "VIEW":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
                     //log.Printf("media - VIEW")
 					w.Header().Set("Access-Control-Allow-Origin", "*")
 					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT")
@@ -49245,7 +49548,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 							w.Write(buf.Bytes())
 							//return
 						case "TDSMEDIA":
-							datastoreClient := createClientDS(w,r)
+							datastoreClient := createClientDS()
 							q := datastore.NewQuery("TDSMEDIA").Order("-MEDIA_ID").Limit(5000)
 							if contCat != "" && FL_RECENT == false {
 							q = datastore.NewQuery("TDSMEDIA").Filter("CATEGORY =", contCat).Filter("YEAR =", start_year)
@@ -49388,7 +49691,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 				case "ADD_REM_RAN_WP":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
 					MEDIA_ID := r.FormValue("MEDIA_ID")
 					PROP := r.FormValue("PROP")
 					URL := r.FormValue("URL")
@@ -49482,7 +49785,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 					w.Write(buf.Bytes())
 					return
 				case "DELETE":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
 					updateUserActiveData(w, r, c, uid, "/media(delete)")
 					MEDIA_ID := r.FormValue("MEDIA_ID")
 					mediaID := str2int(MEDIA_ID)
@@ -49543,7 +49846,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 					
 				//media
 				case "UPDATE3":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
 					SHARED_TO := r.FormValue("SHARED_TO")
 					
 					MEDIA_ID2 := r.FormValue("MEDIA_ID")
@@ -49581,7 +49884,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 						break
                     }
                 case "UMP":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
                     SHUF := r.FormValue("shuf")
 					updateUserActiveData(w, r, c, uid, "/media(ump)")
 					//also notify all users about this
@@ -49686,7 +49989,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 					return
 				//midi player
 				case "MDP":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
 					updateUserActiveData(w, r, c, uid, "/media(mdp)")
 					//also notify all users about this
 					msgDtl3 := fmt.Sprintf("UID:%v %v has accessed MIDI Player! %v", getGeoString(w,r), uid, getAccessString(w,r,""))
@@ -49746,7 +50049,7 @@ func media(w http.ResponseWriter, r *http.Request) {
 					return
 				
                 case "UVP":
-					datastoreClient := createClientDS(w,r)
+					datastoreClient := createClientDS()
                     SHUF := r.FormValue("shuf")
 					updateUserActiveData(w, r, c, uid, "/media(uvp)")
 					//also notify all users about this
@@ -52112,7 +52415,41 @@ Your current source of UWM settings is TDSMEDIA-{{.NUM_FILLER1}}. <a href="/peop
 <h3>Custom Search Source</h3>
 You may <a href="/people-edit?EditPeopleFunc=EDIT_CUSTOM_SEARCH_MINE&UID=">edit</a> your personal custom search configurations. Your current source of custom search is TDSMEDIA-{{.NUM_FILLER2}}.
 <br>
- 
+<!--edwinxxx-->
+<hr>
+<h3>Choose Speech Voice</h3>
+<form action="/people-edit?EditPeopleFunc=SetSpeechVoice" method="POST" enctype="multipart/form-data">
+		<select name="VOICE" value="{{.STR_FILLER11}}">
+			<option data-lang="en-US" data-name="Microsoft David - English (United States)">Microsoft David - English (United States) (en-US) -- DEFAULT</option>
+			<option data-lang="en-US" data-name="Microsoft Mark - English (United States)">Microsoft Mark - English (United States) (en-US)</option>
+			<option data-lang="en-US" data-name="Microsoft Zira - English (United States)">Microsoft Zira - English (United States) (en-US)</option>
+			<option data-lang="de-DE" data-name="Google Deutsch">Google Deutsch (de-DE)</option>
+			<option data-lang="en-US" data-name="Google US English">Google US English (en-US)</option>
+			<option data-lang="en-GB" data-name="Google UK English Female">Google UK English Female (en-GB)</option>
+			<option data-lang="en-GB" data-name="Google UK English Male">Google UK English Male (en-GB)</option>
+			<option data-lang="es-ES" data-name="Google español">Google español (es-ES)</option>
+			<option data-lang="es-US" data-name="Google español de Estados Unidos">Google español de Estados Unidos (es-US)</option>
+			<option data-lang="fr-FR" data-name="Google français">Google français (fr-FR)</option>
+			<option data-lang="hi-IN" data-name="Google हिन्दी">Google हिन्दी (hi-IN)</option>
+			<option data-lang="id-ID" data-name="Google Bahasa Indonesia">Google Bahasa Indonesia (id-ID)</option>
+			<option data-lang="it-IT" data-name="Google italiano">Google italiano (it-IT)</option>
+			<option data-lang="ja-JP" data-name="Google 日本語">Google 日本語 (ja-JP)</option>
+			<option data-lang="ko-KR" data-name="Google 한국의">Google 한국의 (ko-KR)</option>
+			<option data-lang="nl-NL" data-name="Google Nederlands">Google Nederlands (nl-NL)</option>
+			<option data-lang="pl-PL" data-name="Google polski">Google polski (pl-PL)</option>
+			<option data-lang="pt-BR" data-name="Google português do Brasil">Google português do Brasil (pt-BR)</option>
+			<option data-lang="ru-RU" data-name="Google русский">Google русский (ru-RU)</option>
+			<option data-lang="zh-CN" data-name="Google&nbsp;普通话（中国大陆）">Google&nbsp;普通话（中国大陆） (zh-CN)</option>
+			<option data-lang="zh-HK" data-name="Google&nbsp;粤語（香港）">Google&nbsp;粤語（香港） (zh-HK)</option>
+			<option data-lang="zh-TW" data-name="Google 國語（臺灣）">Google 國語（臺灣） (zh-TW)</option>
+		</select>
+		<option selected>
+		{{.STR_FILLER11}}
+		</option>
+	</select>
+	<input type="submit" value="Submit">
+</form>
+
 <hr>
 <h3>Choose Applications Provider</h3>
 <form action="/people-edit?EditPeopleFunc=SetAppsProvider" method="POST" enctype="multipart/form-data">
@@ -56726,7 +57063,7 @@ func settingsDisplayScreen(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	aUser := r.FormValue("aUser")
 	tok := r.FormValue("tok")
 	FL_TOKEN_PROC := false
@@ -58232,6 +58569,10 @@ func updateUserActiveData(w http.ResponseWriter, r *http.Request, c context.Cont
 	if SYS_STATELESS_SERVER == true {
 		return
 	}
+	//D0116
+	if SYS_REALTIME_NOTIFS == false {
+		return
+	}
 	//u := user.Current(c)
 	FL_USER_INCOGNITO := false
 	if r.Header.Get("X-Goog-Authenticated-User-Email") != ""  {
@@ -58376,7 +58717,7 @@ func queueCounterIncrement(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     _, _, val := cloudTaskHandler(w,r)
     //log.Printf("queueInsertUnknownRule executed: queueName(%v), taskName(%v)", queueName, taskName)
     //cname := fmt.Sprintf("%v",r.FormValue("name"))
@@ -58535,7 +58876,7 @@ func TASK_MEMCACHER_desktopIcons(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     _, _, val := cloudTaskHandler(w,r)
     //log.Printf("queueInsertUnknownRule executed: queueName(%v), taskName(%v)", queueName, taskName)
     //USER_EMAIL_ID := fmt.Sprintf("%v",r.FormValue("uid"))
@@ -58768,7 +59109,7 @@ func TASK_MEMCACHER_All_desktopCss(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)	
+    datastoreClient := createClientDS()	
 	//Generate css for all desktop0s
 	q := datastore.NewQuery("TDSCNFG").Filter("CFG_ID =", "desktop0_css")
 	//log.Panicf("[S0428]")
@@ -58836,7 +59177,7 @@ func TASK_MEMCACHER_desktopCss(w http.ResponseWriter, r *http.Request) {
     //deskCss := r.FormValue("css")
     deskCss := val["css"].(string)
      //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//var buffer3 bytes.Buffer
 	//var buffer4 bytes.Buffer
  
@@ -58896,7 +59237,7 @@ func TASK_MEMCACHER_desktop0_homeIcons_Single(w http.ResponseWriter, r *http.Req
 	//uid := fmt.Sprintf("%v",r.FormValue("uid"))
 	fmt.Fprintf(w, "uid: %v<br>", uid)
      //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	
 	IS_OK_TO_RUN := checkIfOkToRun(w, r)
 	if IS_OK_TO_RUN == false {
@@ -58985,7 +59326,7 @@ func TASK_MEMCACHER_desktop0_homeIcons(w http.ResponseWriter, r *http.Request) {
 		return
     }
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
@@ -59069,7 +59410,7 @@ func TASK_MEMCACHER_desktop0_wallpapers(w http.ResponseWriter, r *http.Request) 
 	}	
  
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
  
 	//c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
@@ -59125,7 +59466,7 @@ func TASK_MEMCACHER_desktopN_wallpapers(w http.ResponseWriter, r *http.Request) 
 		return
 	}	
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 
 	//c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
@@ -59176,7 +59517,7 @@ func queueStatsIncLoggedIn(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     _, _, val := cloudTaskHandler(w,r)
     //log.Printf("queueInsertUnknownRule executed: queueName(%v), taskName(%v)", queueName, taskName)
     //uid := fmt.Sprintf("%v",r.FormValue("uid"))
@@ -59414,7 +59755,7 @@ func getActiveStatus(w http.ResponseWriter, r *http.Request, UID string) (IS_ACT
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	IS_ACTIVE = "N"
 	//uid := UID
 	//check cache first
@@ -59489,7 +59830,7 @@ func queueStatsUserActive(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     _, _, val := cloudTaskHandler(w,r)
     //log.Printf("queueInsertUnknownRule executed: queueName(%v), taskName(%v)", queueName, taskName)
     //uid := fmt.Sprintf("%v",r.FormValue("uid"))
@@ -59820,7 +60161,7 @@ func getCurrAccLog(w http.ResponseWriter, r *http.Request) (CURR_ACC_LOG_ALL str
 	
         var g TDSLOGS
         //D0086
-        datastoreClient := createClientDS(w,r)
+        datastoreClient := createClientDS()
 		if err := datastoreClient.Get(c, getKeyAccess(c,accessLogKey), &g); err != nil {
 			//panic(err)
 		}
@@ -60187,7 +60528,7 @@ func procBroadcastMessage(w http.ResponseWriter, r *http.Request) {
 }
  
 //check if sites server name only
-func getSitesServerName(w http.ResponseWriter, r *http.Request) ( SEARCH_SERVER_NAME string) {
+/*func getSitesServerName(w http.ResponseWriter, r *http.Request) ( SEARCH_SERVER_NAME string) {
 	
     IS_SEARCH_SERVER, SEARCH_SERVER, _ := getSitesServer(w,r)
 	if IS_SEARCH_SERVER == "Y" {
@@ -60204,6 +60545,9 @@ func getSitesServerName(w http.ResponseWriter, r *http.Request) ( SEARCH_SERVER_
 		}		
 	}
 	return SEARCH_SERVER_NAME
+}*/
+func getSitesServerName(w http.ResponseWriter, r *http.Request) ( SEARCH_SERVER_NAME string) {
+	return ""
 }
  
 //get hostname from url
@@ -60230,7 +60574,7 @@ func getSitesServer(w http.ResponseWriter, r *http.Request) (IS_SEARCH_SERVER, S
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 
 	cKey := fmt.Sprintf("SEARCH_SERVER")
 	//SEARCH_SERVER := ""
@@ -60271,7 +60615,7 @@ func getSitesServer(w http.ResponseWriter, r *http.Request) (IS_SEARCH_SERVER, S
 			  thisKey := fmt.Sprintf("SYSTEM_SEARCH_SETTINGS")
               key := datastore.NameKey("TDSCNFG", thisKey, nil)
               //D0086
-              datastoreClient := createClientDS(w,r)
+              datastoreClient := createClientDS()
 			  if err := datastoreClient.Get(c, key, &g); err != nil {
 				return "N", SYS_SEARCH_SERVER, 0
               }
@@ -60391,7 +60735,7 @@ func getTDSUSERSwf(w http.ResponseWriter, r *http.Request) ([]byte) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//log.Printf("getTDSUSERSwf")
 	cKey := fmt.Sprintf("TDSUSERS_CACHE")
 	FL_PROC_CACHE_OK := true
@@ -60601,7 +60945,7 @@ func procTrending(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     //D0083
     mode := r.FormValue("t")
     var td []UlapphSources
@@ -60674,7 +61018,7 @@ func procWhatsNew(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     //D0083
     mode := r.FormValue("t")
     var td []UlapphSources
@@ -60748,7 +61092,7 @@ func procDiscussions(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	// 20170708191743
 	// 20170708191743
 	// TDSARTL-4
@@ -60837,7 +61181,7 @@ func procPeopleDir(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//billing fix
 	q := datastore.NewQuery("TDSUSERS").Filter("LOGGED_IN =", 1)
 	//log.Panicf("[S0458]")
@@ -61453,7 +61797,7 @@ func procLogHits(w http.ResponseWriter, r *http.Request) {
 			accessLogKey := fmt.Sprintf("%v.%d", DATE, i)
             var g TDSLOGS
             //D0086
-            datastoreClient := createClientDS(w,r)
+            datastoreClient := createClientDS()
 			if err := datastoreClient.Get(c, getKeyAccess(c,accessLogKey), &g); err != nil {
 				//do nothing
 				data = append(data, 0)
@@ -61496,7 +61840,7 @@ func queueStatsDecLoggedIn(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     _, _, val := cloudTaskHandler(w,r)
     //log.Printf("queueInsertUnknownRule executed: queueName(%v), taskName(%v)", queueName, taskName)
     //uid := fmt.Sprintf("%v",r.FormValue("uid"))
@@ -61660,7 +62004,7 @@ func queueLogMapCoors(w http.ResponseWriter, r *http.Request, xLatLong, USER_TYP
 		//get old text
         var g TDSLOGS
         //D0086
-        datastoreClient := createClientDS(w,r)
+        datastoreClient := createClientDS()
 		if err := datastoreClient.Get(c, getKeyAccess(c,accessLogKey), &g); err != nil {
 			//panic(err)
         }
@@ -61709,7 +62053,7 @@ func queueLogMapCoors(w http.ResponseWriter, r *http.Request, xLatLong, USER_TYP
 			//get old text
             var g TDSLOGS
             //D0086
-            datastoreClient := createClientDS(w,r)
+            datastoreClient := createClientDS()
 			if err := datastoreClient.Get(c, getKeyAccess(c,accessLogKey), &g); err != nil {
 				//panic(err)
             }
@@ -61745,7 +62089,7 @@ func queueNotifyCH(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	var buffer4 bytes.Buffer
     var buffer5 bytes.Buffer
     _, _, val := cloudTaskHandler(w,r)
@@ -61892,7 +62236,7 @@ func queueNotifyCH(w http.ResponseWriter, r *http.Request) {
 			//get old text
             var g TDSLOGS
             //D0086
-            datastoreClient := createClientDS(w,r)
+            datastoreClient := createClientDS()
 			if err := datastoreClient.Get(c, getKeyAccess(c,accessLogKey), &g); err != nil {
 				//panic(err)
 			}
@@ -61934,7 +62278,7 @@ func queueRatings(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     _, _, val := cloudTaskHandler(w,r)
     //log.Printf("queueInsertUnknownRule executed: queueName(%v), taskName(%v)", queueName, taskName)
     //RTG_FUNC := r.FormValue("RTG_FUNC")
@@ -62222,7 +62566,7 @@ func struwmUpdateCCTVList(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     //log.Printf("struwmUpdateCCTVList...")
     _, _, val := cloudTaskHandler(w,r)
     //log.Printf("queueInsertUnknownRule executed: queueName(%v), taskName(%v)", queueName, taskName)
@@ -62650,7 +62994,7 @@ func appendToSid(w http.ResponseWriter, r *http.Request, UID, FUNC, SID, TEXT st
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	docID := 0
 	TARGET := ""
 	BLOB_KEY := ""
@@ -62903,7 +63247,7 @@ func queueSocial(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     _, _, val := cloudTaskHandler(w,r)
     //"UID": UID, "SID": SID, "SOC_FUNC": SOC_FUNC, "COMMENTS_BY": CommentsBy
     //log.Printf("queueSocial executed: queueName(%v), taskName(%v)", queueName, taskName)
@@ -63701,7 +64045,7 @@ func queueAdsLogViews(w http.ResponseWriter, r *http.Request) {
         c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
         //D0086
-        datastoreClient := createClientDS(w,r)
+        datastoreClient := createClientDS()
         _, _, val := cloudTaskHandler(w,r)
         //log.Printf("queueInsertUnknownRule executed: queueName(%v), taskName(%v)", queueName, taskName)
         //uid := fmt.Sprintf("%v",r.FormValue("uid"))
@@ -63858,7 +64202,7 @@ func queueStatsUpdateMostRecent(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     _, _, val := cloudTaskHandler(w,r)
     //log.Printf("queueInsertUnknownRule executed: queueName(%v), taskName(%v)", queueName, taskName)
     //uid := fmt.Sprintf("%v",r.FormValue("uid"))
@@ -63963,7 +64307,7 @@ func queueInsertUnknownRule(w http.ResponseWriter, r *http.Request) {
     _, _, val := cloudTaskHandler(w,r)
     //log.Printf("queueInsertUnknownRule executed: queueName(%v), taskName(%v)", queueName, taskName)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	DISP_TYP := val["DISP_TYP"].(string)
 	COUNTRY	:= val["COUNTRY"].(string)
 	REGION	:= val["REGION"].(string)
@@ -64073,7 +64417,7 @@ func adhocWebLoadTDSUSERS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	keysBody := []byte(`[
 {"SYS_VER":1,
 "USER":"ulapph@gmail.com",
@@ -64121,7 +64465,7 @@ func adhocDeleteTDSUSERS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSUSERS")
 	//log.Panicf("[S0500]")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -64146,7 +64490,7 @@ func adhocDeleteTDSRULES(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSRULES")
 	//log.Panicf("[S0501]")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -64172,7 +64516,7 @@ func adhocDeleteTDSSTATS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSSTATS")
 	//log.Panicf("[S0502]")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -64197,7 +64541,7 @@ func adhocDeleteTDSCNFG(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSCNFG")
 	//log.Panicf("[S0503]")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -64223,7 +64567,7 @@ func adhocDeleteTDSICONS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSICONS")
 	//log.Panicf("[S0504]")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -64256,7 +64600,7 @@ func adhocDeleteTDSADS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSADS")
 	//log.Panicf("[S0505]")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -64289,7 +64633,7 @@ func adhocDeleteTDSADTS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSADTS")
 	//log.Panicf("[S0506]")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -64315,7 +64659,7 @@ func adhocDeleteTDSSLIDE(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSSLIDE")
 	//log.Panicf("[S0507]")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -64348,7 +64692,7 @@ func adhocDeleteTDSARTL(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSARTL")
 	//log.Panicf("[S0508]")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -64381,7 +64725,7 @@ func adhocDeleteTDSMEDIA(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSMEDIA")
 	//log.Panicf("[S0509]")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -64412,7 +64756,7 @@ func adhocDeleteTDSLOGS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSLOGS").KeysOnly()
 	//log.Panicf("[S0510]")
 	keys, err := datastoreClient.GetAll(c,q, nil)
@@ -64436,7 +64780,7 @@ func adhocDeleteChannel(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
         defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("channel").KeysOnly()
 	//log.Panicf("[S0511]")
 	keys, err := datastoreClient.GetAll(c,q, nil)
@@ -64460,7 +64804,7 @@ func adhocDeleteGreeting(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
         defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("Greeting").KeysOnly()
 	//log.Panicf("[S0512]")
 	keys, err := datastoreClient.GetAll(c,q, nil)
@@ -64516,7 +64860,7 @@ func adhocWebLoadTDSSTATS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
  
 	keysBody := []byte(`[
 {"SYS_VER":1,
@@ -64616,7 +64960,7 @@ func adhocWebLoadTDSSLIDE(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
  
 	keysBody := []byte(`[
 {"FL_COUNTRY_SPECIFIC":"",
@@ -64666,7 +65010,7 @@ func adhocWebLoadTDSARTL(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	keysBody := []byte(`[
 {"FL_COUNTRY_SPECIFIC":"",
 "SYS_VER":1,
@@ -64715,7 +65059,7 @@ func adhocWebLoadTDSMEDIA(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	keysBody := []byte(`[
 {"SYS_VER":1,
 "MEDIA_ID":1,
@@ -64763,7 +65107,7 @@ func adhocWebLoadTDSCNFG(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	keysBody := []byte(`[
 {"SYS_VER":1,
 "USER":"desktop1",
@@ -64800,7 +65144,7 @@ func adhocWebLoadTDSICONS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	keysBody := []byte(`[
 {"SYS_VER":1,
 "ICON_ID":1,
@@ -64838,7 +65182,7 @@ func adhocWebLoadTDSRULES(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	keysBody := []byte(`[
 {"SYS_VER":1,
 "RULE_NUM":1,
@@ -64899,7 +65243,7 @@ func adhocWebLoadTDSADS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	keysBody := []byte(`[
 {"SYS_VER":1,
 "ADS_ID":1,
@@ -64946,7 +65290,7 @@ func adhocWebLoadTDSADTS(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	keysBody := []byte(`[
 {"SYS_VER":1,
 "ADS_TIME_SLOT":"00:00:00",
@@ -66237,9 +66581,13 @@ func usersProcessor(w http.ResponseWriter, r *http.Request, auth, USER_EMAIL_ID 
 	if SYS_STATELESS_SERVER == true && USER_EMAIL_ID == ADMIN_ACCOUNT {
 		return true, "GRP_USER", "N", ""
 	}
+	//D0116
+	if SYS_NOREG_FIXED_USER != "" {
+		return true, "GRP_USER", "N", ""
+	}
     c, cancel := context.WithCancel(context.Background())
         defer cancel()
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//get cached users
 	usersProcessor_CACHE := ""
 	usersProcessor_CACHE_KEY := fmt.Sprintf("usersProcessor_CACHE_%s", USER_EMAIL_ID)
@@ -66394,7 +66742,7 @@ func TASK_MEMCACHER_usersProcessor(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
  
 	q := datastore.NewQuery("TDSUSERS").Order("USER")
 	//log.Panicf("[S0532]")
@@ -66439,7 +66787,7 @@ func homeProcessor(w http.ResponseWriter, r *http.Request) (OnlineUsers int, MOS
         c, cancel := context.WithCancel(context.Background())
         defer cancel()
         //D0086
-        datastoreClient := createClientDS(w,r)
+        datastoreClient := createClientDS()
 		//retrieve current users online
 		q := datastore.NewQuery("TDSSTATS").Order("STAT_NAME")
 		//log.Panicf("[S0533]")
@@ -66602,7 +66950,7 @@ func getAds2(w http.ResponseWriter, r *http.Request, FUNC_ID string, ADS_ID int,
     //u := user.Current(c)
     h := r.Header
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	uid := ""
 	if r.Header.Get("X-Goog-Authenticated-User-Email") == "" {
 		xCountry := h.Get("X-AppEngine-Country")
@@ -66825,7 +67173,7 @@ func handleClickAds(w http.ResponseWriter, r *http.Request) {
         defer cancel()
     //u := user.Current(c)
      //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 
 	var buffer bytes.Buffer
 	
@@ -66988,7 +67336,7 @@ func handleClickUrl(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
         defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//h := r.Header
 	//u := user.Current(c)
 	
@@ -67145,7 +67493,7 @@ func getIconDtls(w http.ResponseWriter, r *http.Request, FUNC_CODE string, ICON_
     c, cancel := context.WithCancel(context.Background())
         defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	FL_ICON_EXISTS = false
 	
 	switch FUNC_CODE {
@@ -67209,7 +67557,7 @@ func getIconDtls(w http.ResponseWriter, r *http.Request, FUNC_CODE string, ICON_
 func getIcons(w http.ResponseWriter, r *http.Request, c context.Context, USER_EMAIL_ID string, deskName string) (FL_CUSTOM_ICONS bool, iconsHTML string) {
 	//var buffer3 bytes.Buffer
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	if deskName != "desktop0" {
 		USER_EMAIL_ID = deskName
 	}
@@ -67301,7 +67649,7 @@ func getIconsDesktop(w http.ResponseWriter, r *http.Request, thisDeskNum int, TX
     c, cancel := context.WithCancel(context.Background())
         defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	iconsArr := strings.Split(TXT_VAL,",")
 	//if (iconsArr[0] == "desktop0") {
 	if thisDeskNum >= 0 && len(iconsArr) > 0 {
@@ -67369,7 +67717,7 @@ func TASK_MEMCACHER_rulesProcessor(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
         defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	mCtr := 0
 		//get from datastore
  
@@ -67440,7 +67788,7 @@ func rulesProcessor(w http.ResponseWriter, r *http.Request, t string) (FL_FOUND_
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	FL_FOUND_RULE = false
 	FL_CACHE_PROC_OK := true
 	FL_MATCH_ALL_EXC_IP_ADD = false
@@ -67967,7 +68315,7 @@ func adslotsProcessor(w http.ResponseWriter, r *http.Request, CATEGORY string) (
 	    defer cancel()
     //var buffer bytes.Buffer
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	FL_FOUND_SLOT = false	
 	AdsID2 = "A0000"	
  
@@ -68055,7 +68403,7 @@ func TASK_MEMCACHER_adslotsProcessor(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
         defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//FL_FOUND_SLOT := false	
 	AdsID2 := "A0000"	
 	//var buffer bytes.Buffer
@@ -68202,7 +68550,7 @@ var userAccessTemplateMobileRootSearch = template.Must(template.New("userAccessT
     <title>Search::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
@@ -68273,7 +68621,7 @@ var userAccessTemplateMobileRootAll = template.Must(template.New("userAccessTemp
     <title>www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />   	
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />   	
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
@@ -68349,7 +68697,7 @@ var userAccessTemplateMobileDesktop0 = template.Must(template.New("userAccessTem
     <title>Desktop0::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." /> 	
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." /> 	
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
@@ -68415,7 +68763,7 @@ var userAccessTemplateDesktop0Head1 = template.Must(template.New("userAccessTemp
     <title>Desktop0::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -68440,7 +68788,7 @@ var userAccessTemplateDesktopNHead1 = template.Must(template.New("userAccessTemp
     <title>Desktop0::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -68559,7 +68907,7 @@ var userAccessTemplateDesktop0Part1 = template.Must(template.New("userAccessTemp
     <title>Desktop0::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -68583,7 +68931,7 @@ var userAccessTemplateDesktop0Part1a = template.Must(template.New("userAccessTem
     <title>Desktop0::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -68927,7 +69275,7 @@ var htmlHeaderModal = template.Must(template.New("htmlHeaderModal").Parse(`
     <title>www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -68953,7 +69301,7 @@ var mobileControl = template.Must(template.New("mobileControl").Parse(`
     <title>MC::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -69087,7 +69435,7 @@ var htmlHeaderModalProfile = template.Must(template.New("htmlHeaderModalProfile"
     <title>Profile::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -69147,7 +69495,7 @@ var htmlEditorHeader = template.Must(template.New("htmlEditorHeader").Parse(`
     <title>Editor::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -69636,7 +69984,7 @@ var htmlEditorHeaderReader = template.Must(template.New("htmlEditorHeaderReader"
     <title>Editor::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -70015,7 +70363,7 @@ var htmlHeaderModalAds = template.Must(template.New("htmlHeaderModalAds").Parse(
     <title>Ads::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -70038,7 +70386,7 @@ var htmlHeaderAdmin = template.Must(template.New("htmlHeaderAdmin").Parse(`
     <title>Admin::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -70067,7 +70415,7 @@ var htmlHeaderSearchGlow = template.Must(template.New("htmlHeaderSearchGlow").Pa
     <title>Search::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -70088,7 +70436,7 @@ var htmlHeaderFB = template.Must(template.New("htmlHeaderFB").Parse(`
     <title>www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
@@ -70429,7 +70777,7 @@ var htmlQuickSearchForms = template.Must(template.New("htmlQuickSearchForms").Pa
  
 var htmlFooterSearch = template.Must(template.New("htmlFooterSearch").Parse(`
 	<hr>
-	&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
+	&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <!--a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a-->	
 	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
@@ -70442,7 +70790,7 @@ var htmlHeaderGB = template.Must(template.New("htmlHeaderGB").Parse(`
     <title>Guestbook::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -70492,7 +70840,7 @@ var htmlHeaderGBSocial = template.Must(template.New("htmlHeaderGBSocial").Parse(
     <title>Discussion::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -70578,7 +70926,7 @@ var htmlHeaderGBChannel = template.Must(template.New("htmlHeaderGBChannel").Pars
     <title>Guestbook::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -70633,7 +70981,7 @@ var htmlHeaderModalRefresh = template.Must(template.New("htmlHeaderModalRefresh"
     <title>www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<meta http-equiv="refresh" content="{{.}}" />
@@ -70657,7 +71005,7 @@ var htmlHeaderModalRefreshNo = template.Must(template.New("htmlHeaderModalRefres
     <title>www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -70679,7 +71027,7 @@ var htmlHeaderModalRefreshNoHome = template.Must(template.New("htmlHeaderModalRe
     <title>www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -70708,7 +71056,7 @@ var htmlHeaderModalBlink = template.Must(template.New("htmlHeaderModalBlink").Pa
     <title>www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<meta http-equiv="refresh" content="{{.}}" />
@@ -70765,7 +71113,7 @@ var htmlHeaderModalBlinkColor = template.Must(template.New("htmlHeaderModalBlink
     <title>www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<meta http-equiv="refresh" content="{{.}}" />
@@ -70826,7 +71174,7 @@ const htmlHeaderGoogleMapsC = `
     <title>Google Maps::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<meta http-equiv="refresh" content="{{.}}" />
@@ -70898,7 +71246,7 @@ var htmlHeaderModalBlinkColorLinkify = template.Must(template.New("htmlHeaderMod
     <title>www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
 	<meta http-equiv="refresh" content="{{.}}" />
@@ -70985,7 +71333,7 @@ var htmlFooterBasic = template.Must(template.New("htmlFooterBasic").Parse(`
 var htmlFooterModal = template.Must(template.New("htmlFooterModal").Parse(`
     <br>
 	<br>
-	&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
+	&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <br>
     <!--a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a-->
@@ -71015,7 +71363,7 @@ var htmlFooterModalKnock = template.Must(template.New("htmlFooterModal").Parse(`
 	</script>
     <br>
 	<br>
-	&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
+	&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <br>
     <!--a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a-->
@@ -71639,7 +71987,7 @@ var playGoBody = template.Must(template.New("playGoBody").Parse(`
 var htmlFooterModalTools = template.Must(template.New("htmlFooterModalTools").Parse(`
     <br>
 	<br>
-	&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
+	&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <br>
     <!--a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a-->
@@ -72028,7 +72376,7 @@ var userAccessTemplateDesktopNPart1 = template.Must(template.New("userAccessTemp
     <title>Desktop0::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -72044,7 +72392,7 @@ var userAccessTemplateDesktopNPart1a = template.Must(template.New("userAccessTem
     <title>Desktop0::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -72058,7 +72406,7 @@ var userAccessTemplateUWMPart1 = template.Must(template.New("userAccessTemplateU
     <title>UWM::www.ulapph.com - ULAPPH Cloud Desktop</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="description" content="ULAPPH Cloud Desktop" />
-    <meta name="copyright" content="Copyright 2014-2021 ULAPPH Cloud Desktop. All Rights Reserved." />
+    <meta name="copyright" content="Copyright 2014-2022 ULAPPH Cloud Desktop. All Rights Reserved." />
     <meta name="keywords" content="Edwin D. Vinas - Personal Cloud Desktop" />
     <meta name="author" content="ULAPPH Cloud Desktop" />
     <link rel="os-touch-icon" href="/static/images/custom_icon.ico"/>
@@ -72196,7 +72544,7 @@ var userRegistrationTemplate = template.Must(template.New("userRegistrationTempl
 	<p>
     <div class="success2"><h3><a href="#register">Click here</a> to register!</h3></div>
 	<hr>
-	&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
+	&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <!--a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a-->
     <!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
@@ -74610,7 +74958,7 @@ var desktopBodyTabzillaTemplateMobilePublic = template.Must(template.New("deskto
 `))
  
 var desktopBodyTabzillaTemplateMobilePublicChan = template.Must(template.New("desktopBodyTabzillaTemplateMobilePublicChan").Parse(`
-<center>&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.</center>
+<center>&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.</center>
 <center><a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop" title="ULAPPH Cloud Desktop Documentation">Powered by ULAPPH Cloud Desktop</a></center>
 <br>
 <script src="/static/js/pulldown-tabzilla-dynamic.js"></script>
@@ -74628,7 +74976,7 @@ var generalFooterBodyHTMLzilla = template.Must(template.New("generalFooterBodyHT
 <script src="/static/js/pulldown-tabzilla-dynamic.js"></script>
 	<br>
 	<br>
-	&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
+	&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <!--a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a-->	
 	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
@@ -74696,7 +75044,7 @@ var guestbookTemplateFeedback = template.Must(template.New("guestbookTemplateFee
 	
 var outputFooterTemplate = template.Must(template.New("outputFooterTemplate").Parse(`
     <hr>
-	&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
+	&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <!--a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a-->	
 	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
@@ -74731,7 +75079,7 @@ var umpFooterTemplate = template.Must(template.New("umpFooterTemplate").Parse(`
     <hr>
 	<h3>[ <a href="/media?FUNC_CODE=SET_MULTI_IMAGE_UPLOAD">Upload</a> ] [ <a href="/infodb?DB_FUNC=MEDIA&CATEGORY=ALL_{{.}}">View All {{.}}</a> ]</h3>
 	<hr>
-	&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
+	&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <!--a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a-->	
 	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
@@ -74742,7 +75090,7 @@ var umpFooterTemplate = template.Must(template.New("umpFooterTemplate").Parse(`
 var outputFooterTemplateChannel = template.Must(template.New("outputFooterTemplateChannel").Parse(`
 	[<a href="/guestbook?GB_FUNC=DELETE_ALL">Delete All Messages</a>] [<a href="/guestbook?GB_FUNC=READ_ALL">Mark all Read</a>]
     <hr>
-	&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
+	&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <!--a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a-->	
 	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
@@ -74764,7 +75112,7 @@ var outputFooterTemplateToken = template.Must(template.New("outputFooterTemplate
 	<script src="/static/js/channel-token.js" type="text/javascript"></script>
 	<script src="/static/js/channel-firebase.js"></script>
     <hr>
-	&copy; 2014-2021 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
+	&copy; 2014-2022 <a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop">ULAPPH Cloud Desktop</a>. All rights reserved.
     <br>
     <!--a href="https://github.com/edwindvinas/ULAPPH-Cloud-Desktop"><img src="https://lh3.googleusercontent.com/rWg64BhkoZePFav1Piw-3GUL8HpG0_Bz3fjhw6vbPDjcAIrkFGfJFU0E3uEOEc6xN5RfAnBxUH1sJ2onP4tnDfs9bOpn4Bs" width=50 height=50></a-->	
 	<!--a href="https://golang.org/"><img src="/static/img/gopher.png" width=50 height=40></a><a href="https://cloud.google.com/"><img src="/static/img/google-cloud.png" width=50 height=50></a-->
@@ -74868,7 +75216,7 @@ func taskUpdateStatsAccess(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSUSERS").Order("USER")
 	//log.Panicf("[S0552]")
 	  recCount,_ := datastoreClient.Count(c,q)
@@ -74970,7 +75318,7 @@ func taskUpdateStatsDesktop(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	for i := 0; i <= 50; i++ {
 		deskName := fmt.Sprintf("desktop%d", i)
 	
@@ -75189,7 +75537,7 @@ func taskCleanupInactiveUsers(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//CLEAN-UP USERS TABLE/////////////////////////////
 	//get os from TDSSTATS
 	fmt.Fprintf(w, "CLEANING UP TDSUSERS...<br>")
@@ -75516,7 +75864,7 @@ func countData(w http.ResponseWriter, r *http.Request, TARGET, UID string) (CURR
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//log.Printf("countData...")
 	//log.Printf("UID: %v", UID)
  
@@ -75828,7 +76176,7 @@ func checkIfOkToRun(w http.ResponseWriter, r *http.Request) (IS_OK_TO_RUN bool) 
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//IS_OK_TO_RUN = false
 	IS_OK_TO_RUN = true
 	if SYS_CHECK_OK_TO_TUN == true {
@@ -75899,7 +76247,7 @@ func taskUpdateSearchIndex(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//log.Printf("taskUpdateSearchIndex()")
 	q := datastore.NewQuery("TDSSLIDE").Order("DOC_ID")
 	recCount, _  := datastoreClient.Count(c,q)
@@ -76028,7 +76376,7 @@ func taskUpdateStatsOsBr(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
         defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//get os from TDSSTATS
 	fmt.Fprintf(w, "SCANNING OS MEMCACHE...<br>")
 	q := datastore.NewQuery("TDSSTATS").Order("-VAL_NUM").Limit(100)
@@ -76186,7 +76534,7 @@ func handleServe(w http.ResponseWriter, r *http.Request) {
         c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
         //D0086
-        datastoreClient := createClientDS(w,r)
+        datastoreClient := createClientDS()
 		_, uid := checkSession(w,r)
 		//uidO := uid
         blobkey := r.FormValue("blobKey")
@@ -76311,7 +76659,7 @@ func addLinkToIcons(w http.ResponseWriter, r *http.Request, tName, tUrl, tDesk, 
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	_, uid := checkSession(w,r)
 	//log.Printf("uid: %v", uid)
 	//detect if icon/url already exists
@@ -76442,7 +76790,7 @@ func handleServePeople(w http.ResponseWriter, r *http.Request) {
         c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
         //D0086
-        datastoreClient := createClientDS(w,r)
+        datastoreClient := createClientDS()
 		_, uid := checkSession(w,r)
 		//blobkey := r.FormValue("blobKey3")
 		//opts := imageApi.ServingURLOptions{Secure: true}
@@ -76694,7 +77042,7 @@ func handleServeAds(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	_, uid := checkSession(w,r)
 	blobkey := r.FormValue("blobKey2")
     thisURL := r.FormValue("murl")
@@ -76852,7 +77200,7 @@ func handleServeSlides(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	_, uid := checkSession(w,r)
 	updateUserActiveData(w, r, c, uid, "/serve-slides")
 	FUNC_CODE := "GET_GRP_ID"
@@ -77140,7 +77488,7 @@ func handleServeArticles(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	_, uid := checkSession(w,r)
 	updateUserActiveData(w, r, c, uid, "/serve-articles")
 	FUNC_CODE := "GET_GRP_ID"
@@ -77948,7 +78296,7 @@ func handleServeMedia(w http.ResponseWriter, r *http.Request) {
         c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
         //D0086
-        datastoreClient := createClientDS(w,r)
+        datastoreClient := createClientDS()
 		//u := user.Current(c)
 		UID := r.FormValue("UID")
 		uid := ""
@@ -78600,7 +78948,7 @@ func handleUploadSlides(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//u := user.Current(c)
 	//uid := uid
 	_, uid := checkSession(w,r)
@@ -79179,7 +79527,7 @@ func handleUploadArticles(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//u := user.Current(c)
 	_, uid := checkSession(w,r)
 	if uid == "" && r.Header.Get("X-Goog-Authenticated-User-Email") != "" {
@@ -79942,7 +80290,7 @@ func handleUploadMedia(w http.ResponseWriter, r *http.Request) {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     //u := user.Current(c)
     _, uid := checkSession(w,r)
     if uid == "" && r.Header.Get("X-Goog-Authenticated-User-Email") != "" {
@@ -80040,7 +80388,7 @@ func handleUploadMedia(w http.ResponseWriter, r *http.Request) {
 			if SR_BLOB == "" {
                 key := datastore.NameKey("TDSCNFG", thisKey, nil)
                 //D0086
-                datastoreClient := createClientDS(w,r)
+                datastoreClient := createClientDS()
 				if err := datastoreClient.Get(c, key, &g); err != nil {
 					//return
                 }
@@ -80092,7 +80440,7 @@ func handleUploadMedia(w http.ResponseWriter, r *http.Request) {
 			if SR_BLOB == "" {
                 key := datastore.NameKey("TDSCNFG", thisKey, nil)
                 //D0086
-                datastoreClient := createClientDS(w,r)
+                datastoreClient := createClientDS()
 				if err := datastoreClient.Get(c, key, &g); err != nil {
 					//return
                 }
@@ -80150,7 +80498,7 @@ func handleUploadMedia(w http.ResponseWriter, r *http.Request) {
 			if SR_BLOB == "" {
                 key := datastore.NameKey("TDSCNFG", thisKey, nil)
                 //D0086
-                datastoreClient := createClientDS(w,r)
+                datastoreClient := createClientDS()
 				if err := datastoreClient.Get(c, key, &g); err != nil {
 					//return
                 }
@@ -80204,7 +80552,7 @@ func handleUploadMedia(w http.ResponseWriter, r *http.Request) {
 			if SR_BLOB == "" {
                 key := datastore.NameKey("TDSCNFG", thisKey, nil)
                 //D0086
-                datastoreClient := createClientDS(w,r)
+                datastoreClient := createClientDS()
 				if err := datastoreClient.Get(c, key, &g); err != nil {
 					//return
                 }
@@ -80259,7 +80607,7 @@ func handleUploadMedia(w http.ResponseWriter, r *http.Request) {
 				thisKey := fmt.Sprintf("SYSTEM_ACB_%v", uid)
                 key := datastore.NameKey("TDSCNFG", thisKey, nil)
                 //D0086
-                datastoreClient := createClientDS(w,r)
+                datastoreClient := createClientDS()
 				if err := datastoreClient.Get(c, key, &g); err != nil {			
 					//return
                 }
@@ -81011,7 +81359,7 @@ func getAvailThemes(w http.ResponseWriter, r *http.Request, SID, con_url string)
 	    defer cancel()
     //D0086
 	//_, uid := checkSession(w,r)
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	////log.Printf("getAvailThemes()")
 	cKey := "SYSTEM_AVAIL_THEMES"
 	cKey2 := fmt.Sprintf("SYSTEM_AVAIL_THEMES_CACHE_%v", SID)
@@ -81104,7 +81452,7 @@ func getSlidesTemplate(w http.ResponseWriter, r *http.Request) string {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	cKey := "SYSTEM_SLIDES_TEMPLATE"
 	templ := ""
 	
@@ -81153,7 +81501,25 @@ func getSlidesTemplate(w http.ResponseWriter, r *http.Request) string {
 	}
 	return templ
 }
-
+//D0116
+//gets slides template
+//for locally served templates from goserve 
+func getSlidesTemplateLocal(w http.ResponseWriter, r *http.Request, fname string) string {
+	if SYS_STATELESS_SERVER == true {
+		return ""
+	}
+	ulapphDebug(w,r, "info", fmt.Sprintf("Opening Template: %v", fname))
+    file, err := os.Open(fname)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer file.Close()
+    tempRaw, err := ioutil.ReadAll(file)
+    if err != nil {
+        log.Fatal(err)
+    }
+	return string(tempRaw)
+}
 //gets article template 
 func getArticlesTemplate(w http.ResponseWriter, r *http.Request) string {
 	if SYS_STATELESS_SERVER == true {
@@ -81164,7 +81530,7 @@ func getArticlesTemplate(w http.ResponseWriter, r *http.Request) string {
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	cKey := "SYSTEM_ARTICLES_TEMPLATE"
 	templ := ""
 	
@@ -81214,7 +81580,24 @@ func getArticlesTemplate(w http.ResponseWriter, r *http.Request) string {
  
 	return templ
 }
-
+//D0116
+//gets article template for locally served templates from goserve
+func getArticlesTemplateLocal(w http.ResponseWriter, r *http.Request, fname string) string {
+	if SYS_STATELESS_SERVER == true {
+		return ""
+	}
+	ulapphDebug(w,r, "info", fmt.Sprintf("Opening Template: %v", fname))
+    file, err := os.Open(fname)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer file.Close()
+    tempRaw, err := ioutil.ReadAll(file)
+    if err != nil {
+        log.Fatal(err)
+    }
+	return string(tempRaw)
+}
 //parses a template 
 func parsePresentTemplate(name string) *template.Template {
 	t := Template()
@@ -81328,7 +81711,6 @@ func parseCustomTemplateReg(tempt string) *template.Template {
 	}
 	return t
 }
-
 //renders slides or articles
 //in ulapph cloud desktop, content is separated from templates
 //it automatically renders data given the slide/article templates 
@@ -81348,6 +81730,14 @@ func renderPresentation(w http.ResponseWriter, r *http.Request, y io.Writer, fna
 			case "A":
 				////log.Printf("getArticlesTemplate")
 				tempt = getArticlesTemplate(w,r)
+			//D0116
+			//support for goserve locally served slides/articles
+			case "SL":
+				////log.Printf("getSlidesTemplate")
+				tempt = getSlidesTemplateLocal(w,r,fname)
+			case "AL":
+				////log.Printf("getArticlesTemplate")
+				tempt = getArticlesTemplateLocal(w,r,fname)
 		}
 		if tempt != "" {
 			////log.Printf("tempt: %v", tempt)
@@ -82826,7 +83216,7 @@ func getTDSMEDIABlobKey(w http.ResponseWriter, r *http.Request, MEDIA_ID int) (B
 		return
     }
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//c := appengine.NewContext(r)
 	c, cancel := context.WithCancel(context.Background())
         defer cancel()
@@ -82922,7 +83312,7 @@ func getTDSSLIDEBlobKey(w http.ResponseWriter, r *http.Request, DOC_ID int) (BLO
 		return
     }
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
@@ -83016,7 +83406,7 @@ func getTDSARTLBlobKey(w http.ResponseWriter, r *http.Request, DOC_ID int) (BLOB
 		return
 	}
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
 	    defer cancel()
@@ -83101,7 +83491,7 @@ func getTDSSLIDEDocID(w http.ResponseWriter, r *http.Request, BLOB_KEY string) (
 	    defer cancel()
     //D0086
 	//_, uid := checkSession(w,r)
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	cKey := fmt.Sprintf("TDSSLIDE_BLOBKEY_CACHE_%v", BLOB_KEY)
 	TDSSLIDE_BLOBKEY_CACHE := ""
 	IMG_URL := ""
@@ -83190,7 +83580,7 @@ func getTDSARTLDocID(w http.ResponseWriter, r *http.Request, BLOB_KEY string) (D
 	    defer cancel()
     //D0086
 	//_, uid := checkSession(w,r)
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	cKey := fmt.Sprintf("TDSARTL_BLOBKEY_CACHE_%v", BLOB_KEY)
 	TDSARTL_BLOBKEY_CACHE := ""
 	FL_PROC_CACHE_OK := false
@@ -86045,7 +86435,7 @@ func getSocStats(w http.ResponseWriter, r *http.Request, thisChan chan string, t
     c, cancel := context.WithCancel(context.Background())
     defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	stats := ""
 	SPL := strings.Split(SID, "-")
 	if len(SPL) > 0 {
@@ -86093,7 +86483,7 @@ func getSocComStat(w http.ResponseWriter, r *http.Request, thisChan chan string,
     c, cancel := context.WithCancel(context.Background())
     defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//90% rating, 12k comments
 	
 	q := datastore.NewQuery("TDSCOMMENT").Filter("SID =", SID)
@@ -86698,7 +87088,7 @@ func readBlobText(w http.ResponseWriter, r *http.Request, mediaID int) (bText []
     defer cancel()
 	//_, uid := checkSession(w,r)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//query media
 	dsKey := fmt.Sprintf("%d", mediaID)
 	key := datastore.NameKey("TDSMEDIA", dsKey, nil)
@@ -88123,7 +88513,7 @@ func isEncrypted(w http.ResponseWriter, r *http.Request, SID string) (FL_ENC boo
     c, cancel := context.WithCancel(context.Background())
     defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	FL_ENC = false
  
 	SPL := strings.Split(SID,"-")
@@ -88387,7 +88777,7 @@ func warnSecurityIssue(w http.ResponseWriter, r *http.Request, uid string) {
     c, cancel := context.WithCancel(context.Background())
     defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	secList := ""
 	FL_SEC_FND := false
 	q := datastore.NewQuery("TDSSLIDE").Filter("SYS_VER =", 666)
@@ -88827,7 +89217,7 @@ func (t *Todo) key(c context.Context, uid string) *datastore.Key {
 //saves the details of a todo item
 func (t *Todo) save(w http.ResponseWriter, r *http.Request, c context.Context,uid string) (*Todo, error) {
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     k, err := datastoreClient.Put(c, t.key(c,uid), t)
     //log.Printf("datastoreClient.Put()  [87576]")
 	//log.Panicf("[S0640]")
@@ -88840,7 +89230,7 @@ func (t *Todo) save(w http.ResponseWriter, r *http.Request, c context.Context,ui
 //deletes the details of a todo item
 func (t *Todo) delete(w http.ResponseWriter, r *http.Request, c context.Context,uid string) (*Todo, error) {
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	key := datastore.IDKey("Todo", int64(t.Id), defaultTodoList(c,uid))
     //k, err := datastoreClient.Put(c, key, t)
     //log.Printf("datastoreClient.Put()  [87576]")
@@ -88862,7 +89252,7 @@ func getAllTodos(w http.ResponseWriter, r *http.Request, uid string) ([]Todo, er
     //c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
     defer cancel()
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
     //todos := []Todo{}
     //q := datastore.NewQuery("Todo").Ancestor(defaultTodoList(c, uid)).Order("Created")
 	q := datastore.NewQuery("Todo").Order("Created")
@@ -88885,7 +89275,7 @@ func deleteDoneTodos(w http.ResponseWriter, r *http.Request, uid string) error {
     //c := appengine.NewContext(r)
     c, cancel := context.WithCancel(context.Background())
     defer cancel()
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	_, err := datastoreClient.RunInTransaction(c, func(tx *datastore.Transaction) error {
         q := datastore.NewQuery("Todo").KeysOnly().Ancestor(defaultTodoList(c,uid)).Filter("Done=", true).KeysOnly()
         //recCount,_ := datastoreClient.Count(c,q)
@@ -89848,7 +90238,7 @@ func createComment(w http.ResponseWriter, r *http.Request, url, name, res, uid, 
     c, cancel := context.WithCancel(context.Background())
     defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//D0040
 	//get SID
 	TARGET := ""
@@ -90119,7 +90509,7 @@ func getComments(w http.ResponseWriter, r *http.Request, SID, url string) ([]Com
     c, cancel := context.WithCancel(context.Background())
     defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	var pl []Comment
 	q := datastore.NewQuery("TDSCOMMENT").Filter("SID =", SID)
 	recCount,_ := datastoreClient.Count(c,q)
@@ -90375,7 +90765,7 @@ func getScoreFromComments(w http.ResponseWriter, r *http.Request, SID, UID strin
 	//////log.Printf("SID: %v",SID)
 	//////log.Printf("UID: %v",UID)
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	q := datastore.NewQuery("TDSCOMMENT").Filter("SID =", SID)
 	recCount,_ := datastoreClient.Count(c,q)
 	cmts := make([]TDSCOMMENT, 0, recCount)
@@ -90404,7 +90794,7 @@ func extractComments(w http.ResponseWriter, r *http.Request, SID, TITLE string) 
     c, cancel := context.WithCancel(context.Background())
     defer cancel()
     //D0086
-    datastoreClient := createClientDS(w,r)
+    datastoreClient := createClientDS()
 	//////log.Printf("SID: %v",SID)
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
@@ -90726,7 +91116,668 @@ func createHTTPTask(url string, message []byte) (*taskspb.Task, error) {
         //log.Printf("createdTask: %v", createdTask)
         //log.Printf("req: %v", req)
         return createdTask, nil
-}	
+}
+//D0115-start
+/////////////////////////////////////////////////////////////
+// Products
+////////////////////////////////////////////////////////////
+//Handler for Products
+func handleFuncProducts(w http.ResponseWriter, r *http.Request) {
+	//c := appengine.NewContext(r)
+    c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+
+	log.Printf("handleFuncProducts")
+	val, err := handleProducts(c, r)
+	/*if err == nil {
+		err = json.NewEncoder(w).Encode(val)
+	}*/
+	if err != nil {
+		w.WriteHeader(400)
+		w.Write([]byte(fmt.Sprintf("api error: %#v", err)))
+		return	
+	}
+	log.Printf("val: %#v", val)
+	data,_ := json.MarshalIndent(val, "", "  ")
+	log.Printf("data: %#v", data)
+	w.Write(data)
+	return
+}
+ 
+func handleProducts(c context.Context, r *http.Request) (interface{}, error) {
+	switch r.Method {
+		
+		case "POST":
+			log.Printf("POST")
+			product, err := decodeProduct(r.Body)
+			if err != nil {
+				log.Printf("%v", err)
+				return nil, err
+			}
+			return product.save(c)
+			
+		case "GET":
+			log.Printf("GET")
+			return getAllProducts(c)
+			
+		case "DELETE":
+			log.Printf("DELETE")
+			return nil, deleteProducts(c)
+	}
+	log.Printf("method not implemented")
+	return nil, fmt.Errorf("method not implemented")
+	
+}
+
+func defaultProductList(c context.Context) *datastore.Key {
+	//datastoreClient := createClientDS()
+	//return datastore.NewKey(c, "ProductList", "default", 0, nil)
+	thisKey := fmt.Sprintf("%s", "default")
+	return datastore.NameKey("ProductList", thisKey, nil)
+}
+ 
+func (t *Product) save(c context.Context) (*Product, error) {
+	log.Printf("save")
+	datastoreClient := createClientDS()
+	_, err := datastoreClient.Put(c, getKeyProduct(c,t.Code), t)
+	if err != nil {
+		log.Printf("%v", err)
+		return nil, err
+	}
+	return t, nil
+}
+ 
+func decodeProduct(r io.ReadCloser) (*Product, error) {
+	defer r.Close()
+	var product Product
+	err := json.NewDecoder(r).Decode(&product)
+	log.Printf("product: %#v", product)
+	return &product, err
+}
+ 
+func getAllProducts(c context.Context) ([]Product, error) {
+	log.Printf("getAllProducts")
+	//products := []Product{}
+	datastoreClient := createClientDS()
+	//_, err := datastore.NewQuery("Product").Ancestor(defaultProductList(c)).Order("Code").GetAll(c, &products)
+	//q := datastore.NewQuery("Product").Ancestor(defaultProductList(c)).Order("Code")
+	//if _, err := datastoreClient.GetAll(c,q, &products); err != nil {
+	//	 panic(err)
+	//	//return
+	//}
+	//q := datastore.NewQuery("Product").Ancestor(defaultProductList(c)).Order("Code")
+	q := datastore.NewQuery("Product").Order("Code")
+	recCount,_ := datastoreClient.Count(c,q)
+	products := make([]Product, 0, recCount)
+	if _, err := datastoreClient.GetAll(c,q, &products); err != nil {
+		 panic(err)
+		//return
+	}
+	//if err != nil {
+	//	log.Printf("%v", err)
+	//	return nil, err
+	//}
+	log.Printf("products: %#v", products)
+	return products, nil
+}
+ 
+func deleteProducts(c context.Context) error {
+	log.Printf("deleteProducts")
+	datastoreClient := createClientDS()
+	q := datastore.NewQuery("Product").KeysOnly()
+	//keys, err := q.GetAll(c, nil)
+	//if err != nil {
+	//	return err
+	//}
+	//err = datastoreClient.DeleteMulti(c, keys)
+	//if err != nil {
+	//	return err
+	//}
+	keys, err := datastoreClient.GetAll(c,q, nil)
+	if err != nil {
+		panic(err)
+	}
+	err = datastoreClient.DeleteMulti(c, keys)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Printf("deleteProducts DeleteMulti")
+	return err
+}
+
+func getKeyProduct(c context.Context, Code string) *datastore.Key {
+	log.Printf("getKeyProduct")
+	//datastoreClient := createClientDS()
+	//return datastore.NewKey(c, "Product", Code, 0, nil)
+	thisKey := fmt.Sprintf("%s", Code)
+	return datastore.NameKey("Product", thisKey, nil)
+}
+
+////////////////////////////////////////////
+// Cart
+////////////////////////////////////////////
+//Handler for Cart
+func handleFuncCart(w http.ResponseWriter, r *http.Request) {
+	//c := appengine.NewContext(r)
+    c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+
+	log.Printf("handleFuncCarts")
+	val, err := handleCarts(c, r)
+	/*if err == nil {
+		err = json.NewEncoder(w).Encode(val)
+	}*/
+	if err != nil {
+		w.WriteHeader(400)
+		w.Write([]byte(fmt.Sprintf("api error: %#v", err)))
+		return	
+	}
+	data,_ := json.MarshalIndent(val, "", "  ")
+	log.Printf("data: %#v", data)
+	w.Write(data)
+	return
+
+}
+ 
+func handleCarts(c context.Context, r *http.Request) (interface{}, error) {
+	switch r.Method {
+		
+		case "POST":
+			log.Printf("POST")
+			cart, err := decodeCart(r.Body)
+			if err != nil {
+				log.Printf("%v", err)
+				return nil, err
+			}
+			return cart.save(c)
+			
+		case "GET":
+			log.Printf("GET")
+			owner := r.FormValue("owner")
+			return getAllCarts(c, owner)
+			
+		case "DELETE":
+			log.Printf("DELETE")
+			owner := r.FormValue("owner")
+			return nil, deleteCarts(c, owner)
+	}
+	log.Printf("method not implemented")
+	return nil, fmt.Errorf("method not implemented")
+	
+}
+ 
+func defaultCartList(c context.Context) *datastore.Key {
+	//datastoreClient := createClientDS()
+	//return datastore.NewKey(c, "CartList", "default", 0, nil)
+	thisKey := fmt.Sprintf("%s", "default")
+	return datastore.NameKey("CartList", thisKey, nil)
+
+} 
+func (t *Cart) save(c context.Context) (*Cart, error) {
+	log.Printf("save")
+	datastoreClient := createClientDS()
+	//_, err := datastoreClient.Put(c, getKeyCart(c,t.Code), t)
+	//_, err := datastoreClient.Put(c, getKeyCart(c,t.Owner), t)
+	_, err := datastoreClient.Put(c, getKeyCart(c,t.Owner,t.Code), t)
+	if err != nil {
+		log.Printf("%v", err)
+		return nil, err
+	}
+	return t, nil
+}
+ 
+func decodeCart(r io.ReadCloser) (*Cart, error) {
+	defer r.Close()
+	var product Cart
+	err := json.NewDecoder(r).Decode(&product)
+	log.Printf("product: %#v", product)
+	return &product, err
+}
+func getAllCarts(c context.Context, owner string) ([]Cart, error) { 
+//func getAllCarts(c context.Context) ([]Cart, error) {
+	log.Printf("getAllCarts")
+	//products := []Cart{}
+	datastoreClient := createClientDS()
+	//_, err := datastore.NewQuery("Cart").Ancestor(defaultCartList(c)).Order("Code").GetAll(c, &products)
+	//if err != nil {
+	//	log.Printf("%v", err)
+	//	return nil, err
+	//}
+	//q := datastore.NewQuery("Cart").Ancestor(defaultCartList(c)).Order("Code")
+	//if _, err := datastoreClient.GetAll(c,q, &products); err != nil {
+	//	 panic(err)
+	//	//return
+	//}
+	//q := datastore.NewQuery("Cart").Filter("Owner =", owner).Order("Code")
+	q := datastore.NewQuery("Cart").Filter("Owner =", owner)
+	recCount,_ := datastoreClient.Count(c,q)
+	cart := make([]Cart, 0, recCount)
+	if _, err := datastoreClient.GetAll(c,q, &cart); err != nil {
+		 panic(err)
+		//return
+	}
+
+	log.Printf("cart: %#v", cart)
+	return cart, nil
+}
+ 
+func deleteCarts(c context.Context, owner string) error {
+	log.Printf("deleteCarts")
+	datastoreClient := createClientDS()
+	q := datastore.NewQuery("Cart").Filter("Owner =", owner).KeysOnly()
+	//keys, err := q.GetAll(c, nil)
+	//if err != nil {
+	//	return err
+	//}
+	//err = datastoreClient.DeleteMulti(c, keys)
+	//if err != nil {
+	//	return err
+	//}
+	//keys, err := datastoreClient.GetAll(c,q, nil)
+	//if err != nil {
+	//	panic(err)
+	//}
+    keys, err := datastoreClient.GetAll(c,q, nil)
+    if err != nil {
+        panic(err)
+    }
+
+	err = datastoreClient.DeleteMulti(c, keys)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Printf("deleteCarts DeleteMulti")
+	return err
+}
+//func getKeyCart(c context.Context, Code string) *datastore.Key {
+func getKeyCart(c context.Context, owner, code string) *datastore.Key {
+	log.Printf("getKeyCart")
+	//datastoreClient := createClientDS()
+	//return datastore.NewKey(c, "Cart", Code, 0, nil)
+	//thisKey := fmt.Sprintf("%s", Code)
+	thisKey := fmt.Sprintf("%s-%s", owner, code)
+	return datastore.NameKey("Cart", thisKey, nil)
+}
+
+//////////////////////////////////////
+// Process
+//////////////////////////////////////
+//Handler for Cart
+func handleFuncProcess(w http.ResponseWriter, r *http.Request) {
+	//c := appengine.NewContext(r)
+    //c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    //defer cancel()
+    if r.Method == "GET" {
+    	//return info
+    	//rules
+		/*type CartRules struct {
+			Type float64 `json:"type"`
+			Code map[string]string  `json:"code"`
+			Value string `json:"value"`
+		}*/
+
+		var thisRules []CartRules
+
+		for k, v := range Rule_BuyThreePayTwoOnly {
+			var aRule CartRules
+			log.Printf("key: %v -> value: %v", k, v)
+			aRule.Type = "Rule_BuyThreePayTwoOnly"
+			aRule.Code = fmt.Sprintf("%v", k)
+			aRule.Value = fmt.Sprintf("%v", v)
+			thisRules = append(thisRules, aRule)
+		} 
+
+		for k, v := range Rule_BulkDiscountMoreThanThree {
+			var aRule CartRules
+			log.Printf("key: %v -> value: %v", k, v)
+			aRule.Type = "Rule_BulkDiscountMoreThanThree"
+			aRule.Code = fmt.Sprintf("%v", k)
+			aRule.Value = fmt.Sprintf("%v", v)
+			thisRules = append(thisRules, aRule)
+		} 
+
+		for k, v := range Rule_BundleFreeForEveryItemBought {
+			var aRule CartRules
+			log.Printf("key: %v -> value: %v", k, v)
+			aRule.Type = "Rule_BundleFreeForEveryItemBought"
+			aRule.Code = fmt.Sprintf("%v", k)
+			aRule.Value = fmt.Sprintf("%v", v)
+			thisRules = append(thisRules, aRule)
+		} 
+
+		for k, v := range Rule_PromoCodeDiscount {
+			var aRule CartRules
+			log.Printf("key: %v -> value: %v", k, v)
+			aRule.Type = "Rule_PromoCodeDiscount"
+			aRule.Code = fmt.Sprintf("%v", k)
+			aRule.Value = fmt.Sprintf("%v", v)
+			thisRules = append(thisRules, aRule)
+		} 
+		log.Printf("thisRules: %#v", thisRules)
+		data,_ := json.MarshalIndent(thisRules, "", "  ")
+		log.Printf("data: %#v", data)
+		w.Write(data)
+		return
+
+    }
+    //use PATCH to trigger this logic
+	promo_code := r.FormValue("promo_code")
+	log.Printf("promo_code: %v", promo_code)
+	
+	//Call initiated by browser when a JS or ajax attempts ot recompute the cart items
+	//Get all items in the cart and process
+	//For each item which has applicable pricing rules, include them in processing
+	//Return total and list of items
+	
+	shop := newCartProc()
+	//Rules for BuyThreePayTwoOnly
+	//If you buy 3 items, you pay only two items
+	log.Printf("Check_Rule_BuyThreePayTwoOnly")
+	shop.Check_Rule_BuyThreePayTwoOnly(w,r)
+
+	//Rules for BulkDiscountMoreThanThree
+	//The price will drop to $$ each for the first month, if the customer buys more than x items.
+	log.Printf("Check_Rule_BulkDiscountMoreThanThree")
+	shop.Check_Rule_BulkDiscountMoreThanThree(w,r)
+
+	//Rules for BundleFreeForEveryItemBought
+	//We will bundle in a free item X free-of-charge with every Y sold
+	log.Printf("Check_Rule_BundleFreeForEveryItemBought")
+	shop.Check_Rule_BundleFreeForEveryItemBought(w,r)
+	
+	//Process those items w/ no rules applied
+	log.Printf("All_Others_No_Rule_Processing")
+	shop.All_Others_No_Rule_Processing(w,r)
+	
+	//Finally, see if any promos to be processed
+	//Check rules if there are promos to be applied
+	log.Printf("promo_code: %v", promo_code)
+	if promo_code != "" {
+		//Rules for PromoCodeDiscount
+		//Adding the promo code X will apply a $$ discount across the board.
+		log.Printf("Check_Rule_PromoCodeDiscount")
+		shop.Check_Rule_PromoCodeDiscount(w,r,promo_code)
+	}
+	
+	//return data as json
+	cp := CartProc {
+		Total: shop.Total,
+		Rules: shop.Rules,
+		Current: shop.Current,
+	}
+	log.Printf("cp: %#v", cp)
+	data,_ := json.MarshalIndent(cp, "", "  ")
+	log.Printf("data: %#v", data)
+	w.Write(data)
+	
+}
+
+//Initialize cart proc
+func newCartProc() *CartProc {
+	return &CartProc{
+		Total: 0,
+		Rules: map[string]string{},
+		Current: nil,
+	}
+}
+
+func (s *CartProc) Check_Rule_BuyThreePayTwoOnly(w http.ResponseWriter, r *http.Request) error {
+	//c := appengine.NewContext(r)
+    c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+
+	log.Printf("Check_Rule_BuyThreePayTwoOnly")
+	//For each entry in rule, scan the cart items
+	
+	for k, v := range Rule_BuyThreePayTwoOnly {
+		log.Printf("key: %v -> value: %v", k, v)
+		datastoreClient := createClientDS()
+		q := datastore.NewQuery("Cart").Filter("Code =", k)
+
+		//recCount, _  := q.Count(c)
+		recCount,_ := datastoreClient.Count(c,q)
+		items := make([]Cart, 0, recCount)
+		//if _, err := q.GetAll(c, &items); err != nil {
+		//	return err
+		// }
+		//q := datastore.NewQuery("Cart").Filter("Code =", k)
+		if _, err := datastoreClient.GetAll(c,q, &items); err != nil {
+			 panic(err)
+			//return
+		}
+
+		var total float64
+		applied := false
+		for _, p := range items {
+			log.Printf("cart item: %v", p)
+			if p.Items >= 3 {
+				//temp; need to fix this logic; fixed to 3 only for now; what if cx has 6 or 9 items etc
+				///total = float64((p.Items - 1)) * p.Price
+				//numerator := float64(p.Items - 1)
+				numerator := float64(p.Items)
+				quotient := numerator/float64(3)
+				//remainder := (p.Items - 1)%3
+				remainder := (p.Items)%3
+				log.Printf("numerator: %v", numerator)
+				log.Printf("quotient: %v", quotient)
+				log.Printf("remainder: %v", remainder)
+				total = ((quotient * 2) * p.Price) + (float64(remainder) * p.Price)
+				applied = true
+				break
+			}
+		}
+
+		if applied == true {
+			s.Total = s.Total + total
+			log.Printf("Rule APPLIED: Check_Rule_BuyThreePayTwoOnly")
+			s.Rules[k] = "Rule_BuyThreePayTwoOnly"
+		}
+		
+	}
+	return nil
+}
+
+func (s *CartProc) Check_Rule_BulkDiscountMoreThanThree(w http.ResponseWriter, r *http.Request) error {
+	//c := appengine.NewContext(r)
+    c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+
+	log.Printf("Check_Rule_BulkDiscountMoreThanThree")
+	//For each entry in rule, scan the cart items
+
+	for k, v := range Rule_BulkDiscountMoreThanThree {
+		log.Printf("key: %v -> value: %v", k, v)
+		datastoreClient := createClientDS()
+		q := datastore.NewQuery("Cart").Filter("Code =", k)
+
+		//recCount, _  := q.Count(c)
+		recCount,_ := datastoreClient.Count(c,q)
+		items := make([]Cart, 0, recCount)
+		//if _, err := q.GetAll(c, &items); err != nil {
+		//	return err
+		// }
+		if _, err := datastoreClient.GetAll(c,q, &items); err != nil {
+			 panic(err)
+			//return
+		}
+		
+		var total float64
+		applied := false
+		discPrice := v
+		for _, p := range items {
+			log.Printf("cart item: %v", p)
+			if p.Items >= 3 {
+				total = float64(p.Items) * discPrice
+				applied = true
+				break
+			}
+		}
+		s.Total = s.Total + total
+		if applied == true {
+			log.Printf("Rule APPLIED: Rule_BulkDiscountMoreThanThree")
+			s.Rules[k] = "Rule_BulkDiscountMoreThanThree"
+		}
+		
+
+	}
+	
+	return nil
+}
+
+func (s *CartProc) Check_Rule_BundleFreeForEveryItemBought(w http.ResponseWriter, r *http.Request) error {
+	//c := appengine.NewContext(r)
+    c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+
+	log.Printf("Check_Rule_BundleFreeForEveryItemBought")
+	//For each entry in rule, scan the cart items
+	
+	for k, v := range Rule_BundleFreeForEveryItemBought {
+		log.Printf("key: %v -> value: %v", k, v)
+		datastoreClient := createClientDS()
+		q := datastore.NewQuery("Cart").Filter("Code =", k)
+
+		//recCount, _  := q.Count(c)
+		recCount,_ := datastoreClient.Count(c,q)
+		items := make([]Cart, 0, recCount)
+		//if _, err := q.GetAll(c, &items); err != nil {
+		//	return err
+		// }
+		if _, err := datastoreClient.GetAll(c,q, &items); err != nil {
+			 panic(err)
+			//return
+		}
+		
+		promCtr := 0
+		applied := false
+		for _, p := range items {
+			log.Printf("cart item: %v", p)
+			promCtr++
+			applied = true
+		}
+		log.Printf("cart item promCtr: %v", promCtr)
+			
+		if applied == true {
+			//get item details for this promo item
+			err := AddPromoItemToCart(w,r,v)
+			if err != nil {
+				log.Printf("AddPromoItemToCart error: %v", v)
+				return nil
+			}
+			log.Printf("Rule APPLIED: Rule_BulkDiscountMoreThanThree")
+			s.Rules[k] = "Rule_BulkDiscountMoreThanThree"
+		}
+		
+
+	}
+	
+	return nil
+}
+
+func (s *CartProc) Check_Rule_PromoCodeDiscount(w http.ResponseWriter, r *http.Request, promo string) error {
+	//c := appengine.NewContext(r)
+    //c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    //defer cancel()
+
+	log.Printf("Check_Rule_PromoCodeDiscount")
+	//For each entry in rule, scan the cart items
+	
+	for k, v := range Rule_PromoCodeDiscount {
+		log.Printf("key: %v -> value: %v", k, v)
+		
+		_, ok := Rule_PromoCodeDiscount[promo]
+		if ok == true {
+			//promo should be applied
+			discount := v/100
+			log.Printf("s.Total: %v", s.Total)
+			s.Total = s.Total - (s.Total * discount)
+			log.Printf("discount: %v", discount)
+			log.Printf("s.Total(w/ promo): %v", s.Total)
+			log.Printf("Rule APPLIED: Rule_PromoCodeDiscount")
+			s.Rules[k] = "Rule_PromoCodeDiscount"
+		}
+	}
+	
+	return nil
+}
+
+func (s *CartProc) All_Others_No_Rule_Processing(w http.ResponseWriter, r *http.Request) error {
+	//c := appengine.NewContext(r)
+    c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+
+	log.Printf("All_Others_No_Rule_Processing")
+	//For all other entries w/ no rules applied, process normally
+		datastoreClient := createClientDS()
+		q := datastore.NewQuery("Cart").Order("Code")
+
+		//recCount, _  := q.Count(c)
+		recCount,_ := datastoreClient.Count(c,q)
+		items := make([]Cart, 0, recCount)
+		//if _, err := q.GetAll(c, &items); err != nil {
+		//	return err
+		// }
+		if _, err := datastoreClient.GetAll(c,q, &items); err != nil {
+			 panic(err)
+			//return
+		}
+		
+		for _, p := range items {
+			log.Printf("cart item: %v", p)
+			_, ok := s.Rules[p.Code]
+			if ok == false {
+				//normal process this item
+				s.Total = s.Total + (p.Price* float64(p.Items))
+			}
+		}
+		//append to cart current items
+		s.Current = items
+		
+	
+	return nil
+}
+
+func AddPromoItemToCart(w http.ResponseWriter, r *http.Request, code string) (err error) {
+	//c := appengine.NewContext(r)
+    c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    	
+	log.Printf("AddPromoItemToCart")
+	log.Printf("AddPromoItemToCart code: %v", code)
+	datastoreClient := createClientDS()
+	q := datastore.NewQuery("Product").Filter("Code =", code).Limit(1)
+	
+	//recCount, _  := q.Count(c)
+	recCount,_ := datastoreClient.Count(c,q)
+	items := make([]Product, 0, recCount)
+	//if _, err := q.GetAll(c, &items); err != nil {
+	//	return err
+	//}
+	if _, err := datastoreClient.GetAll(c,q, &items); err != nil {
+		 panic(err)
+		//return
+	}
+	
+	for _, p := range items {
+		log.Printf("cart item: %v", p)
+		//insert new promo item to cart
+		
+		cart := Cart {
+			Code: p.Code,
+			Name: p.Name,
+			Price: 0,
+			Items: 1,			
+		}
+		log.Printf("cart: %#v", cart)
+
+		cart.save(c)	
+	}
+	
+	return err
+}
+//D0115-end	
 
 ////////////////////////////////////////////////////////////////////////////////////
 //TO GOD BE THE GLORY

@@ -1632,6 +1632,10 @@
                         <a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=english+movies+full&sp=CAMSBggEEAEgAQ%253D%253D', 'mYoutube' ); return false">Youtube Movies Latest</a>
                     </li>
 					<li class="divider"></li>
+                    <li>
+                        <a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=of+the+future&sp=CAMSBggEEAEgAQ%253D%253D', 'mYoutubeFuture' ); return false">All About the Future</a>
+                    </li>
+                    <li class="divider"></li>
     				<li>
     					<a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=1900s+movies&sp=CAM%253D', '1900s' ); return false">1900s Movies</a>
     				</li>
@@ -1696,6 +1700,10 @@
     				</li>
 					<li class="divider"></li>
     				<li>
+    					<a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=non-stop+music', 'music+nonstop' ); return false">Non-Stop Music</a>
+    				</li>
+					<li class="divider"></li>
+    				<li>
     					<a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=Music+video&sp=CAMSAiAB', 'music+videos+hd' ); return false">Music Videos HD</a>
     				</li>
 					<li class="divider"></li>
@@ -1755,6 +1763,18 @@
     					<a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=christian+music+worship+songs+with+lyrics&sp=CAMSAhAD', 'christianpl' ); return false">Christian Songs</a>
     				</li>
 					<li class="divider"></li>
+                    <li>
+                        <a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=Starbucks+Music&sp=CAMSAhAD', 'sbucks' ); return false">Starbucks Music</a>
+                    </li>
+                    <li class="divider"></li>
+                    <li>
+                        <a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=Coffee+Shop+Music&sp=CAMSAhAD', 'coffeeshop' ); return false">Coffee Shop Music</a>
+                    </li>
+                    <li class="divider"></li>
+                    <li>
+                        <a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=Hotel+Lounge+Music&sp=CAMSAhAD', 'loungemusic' ); return false">Hotel Lounge Music</a>
+                    </li>
+                    <li class="divider"></li>
                 </ul>
             </li>
             

@@ -120,22 +120,15 @@ Sample Uses of ULAPPH
     - If you have no time to browse different news channels, you can let ULAPPH read the news for you!
 
 
-Troubleshooting
+Installation & Troubleshooting
 ----------------
-Here are some errors you may encounter while installing or running the source codes!
-
-ERRORS
--------
-1) ERROR: createHTTPTask: cloudtasks.CreateTask: rpc error: code = PermissionDenied desc = Cloud Tasks API has not been used in project 255989709567 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudtasks.googleapis.com/overview?project=255989709567 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
-- Just enable the CloudTask API
-- Also create a queue
-    gcloud tasks queues create [QUEUE_ID]
-    gcloud tasks queues create ulapph
+Please see README below for the detailed installation and troubleshooting guide.
+- https://github.com/edwindvinas/ULAPPH-Cloud-Desktop/blob/master/README_INSTALLATION.md
 
 Change History
 ----------------
-EDV - 1/15/2022 - Created change history; updated README
-EDV - 2/1/2022 - Created README for installation
+- EDV - 1/15/2022 - Created change history; updated README
+- EDV - 2/1/2022 - Created README for installation
 
 Golang Libraries
 ----------------

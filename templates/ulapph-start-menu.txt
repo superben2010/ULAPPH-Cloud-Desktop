@@ -1711,6 +1711,10 @@
     					<a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=solfeggio+pure', 'music+solfeggio' ); return false">Solfeggio</a>
     				</li>
 					<li class="divider"></li>
+    				<li>
+    					<a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=non-stop+music', 'music+nonstop' ); return false">Non-Stop Music</a>
+    				</li>
+					<li class="divider"></li>
 				    <li>
     					<a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=Music+video&sp=CAMSAiAB', 'music+videos+hd' ); return false">Music Videos HD</a>
     				</li>
@@ -1771,6 +1775,18 @@
     					<a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=christian+music+worship+songs+with+lyrics&sp=CAMSAhAD', 'christianpl' ); return false">Christian Songs</a>
     				</li>
 					<li class="divider"></li>
+                    <li>
+                        <a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=Starbucks+Music&sp=CAMSAhAD', 'sbucks' ); return false">Starbucks Music</a>
+                    </li>
+                    <li class="divider"></li>
+                    <li>
+                        <a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=Coffee+Shop+Music&sp=CAMSAhAD', 'coffeeshop' ); return false">Coffee Shop Music</a>
+                    </li>
+                    <li class="divider"></li>
+                    <li>
+                        <a href="#page" onmouseenter="playAudio();" onclick="openWindow('https://www.youtube.com/results?search_query=Hotel+Lounge+Music&sp=CAMSAhAD', 'loungemusic' ); return false">Hotel Lounge Music</a>
+                    </li>
+                    <li class="divider"></li>
                 </ul>
             </li>
             

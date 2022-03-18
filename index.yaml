@@ -255,3 +255,40 @@ indexes:
   properties:
   - name: DT_UPDATE
     direction: desc
+
+#cart
+- kind: Product
+  ancestor: yes
+  properties:
+  - name: Code
+
+- kind: Product
+  ancestor: yes
+  properties:
+  - name: Price
+
+- kind: Cart
+  ancestor: yes
+  properties:
+  - name: Owner
+
+- kind: Cart
+  ancestor: yes
+  properties:
+  - name: Code
+
+#- kind: Cart
+#  ancestor: yes
+#  properties:
+#  - name: Owner
+#  - name: Code
+
+- kind: Cart
+  ancestor: yes
+  properties:
+  - name: Price
+
+- kind: Cart
+  ancestor: yes
+  properties:
+  - name: Items
