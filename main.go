@@ -715,7 +715,7 @@ import (
     taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
     //D0089
     //D0091
-	"github.com/IBM/go-sdk-core/core"
+	"github.com/IBM/go-sdk-core/v5/core"
 	//"github.com/edwindvinas/go-sdk-core/core"
     "github.com/watson-developer-cloud/go-sdk/assistantv2"
     //"github.com/edwindvinas/go-sdk/assistantv2"

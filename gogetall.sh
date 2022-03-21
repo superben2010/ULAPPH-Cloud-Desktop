@@ -166,8 +166,9 @@ go get "github.com/edwindvinas/go-sdk-core/core"
 
 echo "Cloning instead..."
 GOPATH=${GOPATH}
-cd $GOPATH/src/github.com/edwindvinas/ && git clone https://github.com/edwindvinas/go-sdk-core.git
-cd $GOPATH/src/github.com/edwindvinas/go-sdk-core && mv v5/* .
+mkdir $GOPATH/src/github.com/IBM
+cd $GOPATH/src/github.com/IBM/ && git clone https://github.com/IBM/go-sdk-core.git
+cd $GOPATH/src/github.com/IBM/go-sdk-core/v5/core
 
 
 #echo "github.com/watson-developer-cloud/go-sdk/assistantv2"
@@ -251,8 +252,8 @@ go get "github.com/nsqio/go-nsq"
 echo "github.com/tidwall/pretty"
 go get "github.com/tidwall/pretty"
 
-echo "github.com/IBM/go-sdk-core"
-go get "github.com/IBM/go-sdk-core"
+#echo "github.com/IBM/go-sdk-core"
+#go get "github.com/IBM/go-sdk-core"
 
 echo "Fix some dependencies..."
 GOPATH=${GOPATH}
