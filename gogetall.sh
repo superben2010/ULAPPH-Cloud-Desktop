@@ -37,6 +37,23 @@ cd $GOPATH/src/github.com/gorilla/ && cp -R $GOPATH/src/github.com/edwindvinas/w
 echo    "github.com/edwindvinas/yaml"
 go get    "github.com/edwindvinas/yaml"
 
+
+echo "github.com/go-openapi/strfmt"
+go get "github.com/go-openapi/strfmt"
+
+echo "github.com/hashicorp/go-cleanhttp"
+go get "github.com/hashicorp/go-cleanhttp"
+
+
+echo "github.com/hashicorp/go-retryablehttp"
+go get "github.com/hashicorp/go-retryablehttp"
+
+echo "gopkg.in/go-playground/validator.v9"
+go get "gopkg.in/go-playground/validator.v9"
+
+echo "github.com/googleapis/go-type-adapters"
+go get "github.com/googleapis/go-type-adapters"
+
 #echo	"google.golang.org/api/plus/v1"
 #go get	"google.golang.org/api/plus/v1"
 
