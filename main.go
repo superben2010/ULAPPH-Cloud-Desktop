@@ -680,7 +680,7 @@ import (
 	"github.com/google/go-github/github"
 	//bleve
 	//D0036
-	"github.com/edwindvinas/bleve"
+	//"github.com/edwindvinas/bleve"
 	//D0037
 	"github.com/edwindvinas/sprig"
 	//D0039
@@ -715,15 +715,16 @@ import (
     taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
     //D0089
     //D0091
-	//"github.com/IBM/go-sdk-core/core"
-	"github.com/edwindvinas/go-sdk-core/core"
-    //"github.com/watson-developer-cloud/go-sdk/assistantv2"
-    "github.com/edwindvinas/go-sdk/assistantv2"
+	"github.com/IBM/go-sdk-core/core"
+	//"github.com/edwindvinas/go-sdk-core/core"
+    "github.com/watson-developer-cloud/go-sdk/assistantv2"
+    //"github.com/edwindvinas/go-sdk/assistantv2"
     //D0092
     "github.com/edwindvinas/openweathermap"
     //D0093
     //"github.com/rylio/ytdl"
-	"github.com/edwindvinas/ytdl"
+    "github.com/Andreychik32/ytdl"
+	//"github.com/edwindvinas/ytdl"
     "google.golang.org/api/iterator"
     //D0094
     "github.com/tdewolff/minify/v2"
@@ -736,8 +737,8 @@ import (
 	//D0095
     "github.com/boltdb/bolt"
     //D0096
-    //"github.com/go-redis/redis/v7"
-	"github.com/edwindvinas/redis/v7"
+    "github.com/go-redis/redis/v7"
+	//"github.com/edwindvinas/redis/v7"
 	//D0099
 	//"github.com/nsqio/go-nsq"
 	//D0104
@@ -745,8 +746,8 @@ import (
 	//D0105
 	"github.com/robfig/cron"
 	//D0116
-	//"gopkg.in/yaml.v2"
-	"github.com/edwindvinas/yaml"
+	"gopkg.in/yaml.v2"
+	//"github.com/edwindvinas/yaml"
 )
 //main function
 func main() {   
@@ -1885,10 +1886,10 @@ type Scraper struct {
 }
 
 //bleve
-type Bleve struct {
-	Name string
-	Text string
-}
+//type Bleve struct {
+//	Name string
+//	Text string
+//}
 //firebase user
 type User struct {
 	Email    string `json:"-"`
@@ -26730,7 +26731,7 @@ func ulapphSearch(w http.ResponseWriter, r *http.Request) {
             _, uid := checkSession(w,r)
             
 			//perform bleve search
-			bleveSearch(w,r,uid,IDX_TARGET,SID,SEARCH_KEY)
+			//bleveSearch(w,r,uid,IDX_TARGET,SID,SEARCH_KEY)
 			return
 		//Search took x.x secs with x results from 1 site
 		default:
@@ -26912,147 +26913,6 @@ func ulapphSearch(w http.ResponseWriter, r *http.Request) {
 			 panic(err)
 			}
 	}	
-}
-//handles bleve search which is capable of searching inside a document line by line 
-func bleveSearch(w http.ResponseWriter, r *http.Request, uid, IDX_TARGET, SID, SEARCH_KEY string) {
-    //c := appengine.NewContext(r)
-    //c, cancel := context.WithCancel(context.Background())
-	//    defer cancel()
-	if SEARCH_KEY == "" {
-		bleveSearchOut(w,r,uid,IDX_TARGET,SID,"","","",SEARCH_KEY,nil)
-		return
-    }
-    
-	// open a new index
-	mapping := bleve.NewIndexMapping()
-	inBlev, err := bleve.NewMemOnly(mapping)
-	if err != nil {
-		fmt.Println(err)
-		return
-    }
-    blobkey := ""
-    pDOC_STAT := ""
-    pFL_SHARED := ""
-    pDOC_AUTHOR := ""
-    pDOC_TITLE := ""
-    pDOC_DESC := ""
-    pCONTENT_URL := ""
-    if IDX_TARGET == "IDX_TDSSLIDE" || IDX_TARGET == "IDX_TDSARTL" || IDX_TARGET == "IDX_TDSMEDIA" {
-        SPL := strings.Split(SID,"-")
-        DOC_ID := "0"
-        if len(SPL) > 1 {
-            DOC_ID = SPL[1]
-        }
-        docID := str2int(DOC_ID)
-        //blobkey := ""
-        if IDX_TARGET == "IDX_TDSSLIDE" {
-            blobkey, pDOC_STAT, pFL_SHARED, pDOC_AUTHOR, _, pDOC_TITLE, _, _, _, _  = getTDSSLIDEBlobKey(w, r, docID)
-        } else if IDX_TARGET == "IDX_TDSARTL" {
-            blobkey, pDOC_STAT, pFL_SHARED, pDOC_AUTHOR, _, pDOC_TITLE, _, _, _ = getTDSARTLBlobKey(w, r, docID)
-        } else {
-            blobkey, _, pDOC_TITLE, pDOC_AUTHOR, pDOC_STAT, pFL_SHARED, _, _, _, _, _ = getTDSMEDIABlobKey(w, r, docID)
-        }
-    } else {
-        fmt.Fprintf(w, "InDocSearch Error: Invalid SID type")
-        return
-    }
-	FL_SEARCH_OK := false
-	switch {
-		case pFL_SHARED == "Y" && (pDOC_STAT == "Premium" || pDOC_STAT == "Worldwide" || pDOC_STAT == "ULAPPH Only" || (pDOC_STAT == "Personal" && pDOC_AUTHOR == uid)):
-			FL_SEARCH_OK = true
-		case pFL_SHARED == "Y" && (pDOC_STAT == "Premium" || pDOC_STAT == "Worldwide" || pDOC_STAT == "ULAPPH Only"):
-			FL_SEARCH_OK = true
-		case pDOC_AUTHOR == uid:
-			FL_SEARCH_OK = true
-		case pFL_SHARED == "Y" && (pDOC_STAT == "Premium" || pDOC_STAT == "Worldwide" || pDOC_STAT == "ULAPPH Only" || pDOC_AUTHOR == uid):
-			FL_SEARCH_OK = true
-		case pDOC_AUTHOR == uid:
-			FL_SEARCH_OK = true
-		case pFL_SHARED == "Y" && (pDOC_STAT == "Premium" || pDOC_STAT == "Worldwide"):
-			FL_SEARCH_OK = true
-	}
-	if FL_SEARCH_OK == true {
-		switch {
-			case IDX_TARGET == "IDX_TDSSLIDE" || IDX_TARGET == "IDX_TDSARTL" || IDX_TARGET == "IDX_TDSMEDIA":
-				blobByte := getBlobByte(w, r, blobkey)
-				//for every section, add to index
-				scanner := bufio.NewScanner(bytes.NewReader(blobByte))
-				thisText := ""
-				i := 0
-				l := 0
-				for scanner.Scan() {
-					l++
-					if scanner.Text() != "" {
-						thisStr := fmt.Sprintf("%v", scanner.Text())
-						if string(thisStr[0]) == "*" {
-							if thisText != "" {
-                                
-								d := Bleve {
-									Name: scanner.Text(),
-									Text: thisText,
-								}
-								// index some data
-								inBlev.Index(fmt.Sprintf("id%v:line%v",i,l), d)
-							}
-							thisText = ""
-							i++
-						} else {
-							thisText = fmt.Sprintf("%v\n%v", thisText, scanner.Text())
-						}
-					}
-				}
-            default:
-                fmt.Fprintf(w, "InDocSearch Error: Invalid SID type")
-                return
-        }
-        
-		// search for some text
-		query := bleve.NewMatchQuery(SEARCH_KEY)
-		search := bleve.NewSearchRequest(query)
-		search.Highlight = bleve.NewHighlight()
-		searchResults, err := inBlev.Search(search)
-		if err != nil {
-			//fmt.Println(err)
-			return
-		}
-		bleveSearchOut(w,r,uid,IDX_TARGET,SID,SEARCH_KEY,pDOC_TITLE, pDOC_DESC,pCONTENT_URL,searchResults)
-	} else {
-		fmt.Fprintf(w, "Insufficient privilege to search this document!")
-	}
-}
-
-//handles blevesearch output 
-func bleveSearchOut(w http.ResponseWriter, r *http.Request, uid, IDX_TARGET, SID, SEARCH_KEY, TITLE, DESC, URL string, searchResults interface{}) {
- 
-	const header = `<!DOCTYPE html>
-		<html>
-		<head>
-		<link rel="stylesheet" type="text/css" media="screen,projection" href="/static/css/mobiSearch.css" />
-		</head>
-		<body bgcolor="white">`
-	fmt.Fprintf(w, "%v", header)
-		
-	if SEARCH_KEY != "" {
-		//fmt.Fprintf(w, "<br>Searched <b>%v</b> in <b>%v</b> <br><b>Title</b>: %v <br><b>Desc</b>: %v</b>", SEARCH_KEY, SID, TITLE, DESC)
-        fmt.Fprintf(w, "<br>Searched <b>%v</b> in <b>%v</b> <br><b>Title</b>: %v", SEARCH_KEY, SID, TITLE)
-        //fmt.Fprintf(w, "<br><b>Open</b>: [ <a href=\"%v\" target=\"%v-view\">Full</a> ][ <a href=\"%v\" target=\"%v-text\">Text</a> ] <hr>", URL, SID, fmt.Sprintf("/editor?EDIT_FUNC=READER&SID=%v", SID), SID)
-        fmt.Fprintf(w, "<br>[ <a href=\"%v\" target=\"%v-text\">Open Text</a> ] <hr>", fmt.Sprintf("/editor?EDIT_FUNC=READER&SID=%v", SID), SID)
-		
-		fmt.Fprintf(w, "<pre>%v</pre><hr>", searchResults)	
-	}
- 
-	TEMPDATA := TEMPSTRUCT{
-		STR_FILLER1: IDX_TARGET,
-		STR_FILLER2: SID,
-		STR_FILLER3: SEARCH_KEY,
-	}		
-	if err := htmlInDocSearch.Execute(w, &TEMPDATA); err != nil {
-	  panic(err)
-	}
- 
-	const footer = `<br><br></html>
-		</body>`
-	fmt.Fprintf(w, "%v", footer)
 }
 
 //determine if the http request is from a bot 
