@@ -745,7 +745,8 @@ import (
 	//D0105
 	"github.com/robfig/cron"
 	//D0116
-	"gopkg.in/yaml.v2"
+	//"gopkg.in/yaml.v2"
+	"github.com/edwindvinas/yaml"
 )
 //main function
 func main() {   

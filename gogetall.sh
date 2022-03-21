@@ -30,6 +30,12 @@ go get 	"github.com/edwindvinas/go-type-adapters"
 
 echo    "github.com/edwindvinas/websocket"
 go get    "github.com/edwindvinas/websocket"
+GOPATH=${GOPATH}
+cd $GOPATH/src/github.com/ && mkdir gorilla
+cd $GOPATH/src/github.com/gorilla/ && cp -R $GOPATH/src/github.com/edwindvinas/websocket .
+
+echo    "github.com/edwindvinas/yaml"
+go get    "github.com/edwindvinas/yaml"
 
 #echo	"google.golang.org/api/plus/v1"
 #go get	"google.golang.org/api/plus/v1"
@@ -136,16 +142,21 @@ go get "github.com/edwindvinas/perceptive"
 #echo "github.com/futurenda/google-auth-id-token-verifier"
 #go get "github.com/futurenda/google-auth-id-token-verifier"
 
-echo "github.com/IBM/go-sdk-core/core"
-go get "github.com/IBM/go-sdk-core/core"
+#echo "github.com/IBM/go-sdk-core/core"
+#go get "github.com/IBM/go-sdk-core/core"
+echo "github.com/edwindvinas/go-sdk-core/core"
+go get "github.com/edwindvinas/go-sdk-core/core"
 
 echo "Cloning instead..."
 GOPATH=${GOPATH}
 cd $GOPATH/src/github.com/edwindvinas/ && git clone https://github.com/edwindvinas/go-sdk-core.git
 cd $GOPATH/src/github.com/edwindvinas/go-sdk-core && mv v5/* .
 
-echo "github.com/watson-developer-cloud/go-sdk/assistantv2"
-go get "github.com/watson-developer-cloud/go-sdk/assistantv2"
+
+#echo "github.com/watson-developer-cloud/go-sdk/assistantv2"
+#go get "github.com/watson-developer-cloud/go-sdk/assistantv2"
+echo "github.com/edwindvinas/go-sdk/assistantv2"
+go get "github.com/edwindvinas/go-sdk/assistantv2"
 
 echo "Cloning instead..."
 GOPATH=${GOPATH}
@@ -239,7 +250,7 @@ go get github.com/edwindvinas/go-cache
 go get github.com/edwindvinas/redis/v7
 go get github.com/edwindvinas/sprig
 go get github.com/edwindvinas/ytdl
-go mod download github.com/gorilla/websocket
+#go mod download github.com/gorilla/websocket
 go get github.com/robfig/cron
 go get github.com/tdewolff/minify/v2
 go get github.com/tdewolff/minify/v2/css
@@ -249,7 +260,7 @@ go get github.com/tdewolff/minify/v2/json
 go get github.com/tdewolff/minify/v2/svg
 go get github.com/tdewolff/minify/v2/xml
 go get github.com/watson-developer-cloud/go-sdk/assistantv2
-go mod download gopkg.in/yaml.v2
+#go mod download gopkg.in/yaml.v2
 
 echo "go get gopkg.in/yaml.v2"
 go get "go get gopkg.in/yaml.v2"
