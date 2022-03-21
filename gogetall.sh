@@ -178,8 +178,9 @@ go get "github.com/edwindvinas/go-sdk/assistantv2"
 
 echo "Cloning instead..."
 GOPATH=${GOPATH}
-cd $GOPATH/src/github.com/edwindvinas/ && git clone https://github.com/edwindvinas/go-sdk.git 
-cd $GOPATH/src/github.com/edwindvinas/go-sdk && mv v2/assistantv2 .
+mkdir $GOPATH/src/github.com/watson-developer-cloud
+cd $GOPATH/src/github.com/watson-developer-cloud/ && git clone https://github.com/watson-developer-cloud/go-sdk.git 
+cd $GOPATH/src/github.com/watson-developer-cloud/go-sdk
 
 #echo "golang.org/x/net/html"
 #go get "golang.org/x/net/html"

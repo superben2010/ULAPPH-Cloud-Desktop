@@ -717,7 +717,7 @@ import (
     //D0091
 	"github.com/IBM/go-sdk-core/v5/core"
 	//"github.com/edwindvinas/go-sdk-core/core"
-    "github.com/watson-developer-cloud/go-sdk/assistantv2"
+    "github.com/watson-developer-cloud/go-sdk/v2/assistantv2"
     //"github.com/edwindvinas/go-sdk/assistantv2"
     //D0092
     "github.com/edwindvinas/openweathermap"
