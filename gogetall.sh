@@ -57,8 +57,8 @@ go get "github.com/googleapis/go-type-adapters"
 #echo	"google.golang.org/api/plus/v1"
 #go get	"google.golang.org/api/plus/v1"
 
-echo	"google.golang.org/api/youtube/v3"
-go get	"google.golang.org/api/youtube/v3"
+#echo	"google.golang.org/api/youtube/v3"
+#go get	"google.golang.org/api/youtube/v3"
 
 echo	"golang.org/x/net/context"
 go get	"golang.org/x/net/context"
