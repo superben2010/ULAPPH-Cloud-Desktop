@@ -715,8 +715,10 @@ import (
     taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
     //D0089
     //D0091
-	"github.com/IBM/go-sdk-core/core"
-    "github.com/watson-developer-cloud/go-sdk/assistantv2"
+	//"github.com/IBM/go-sdk-core/core"
+	"github.com/edwindvinas/go-sdk-core/core"
+    //"github.com/watson-developer-cloud/go-sdk/assistantv2"
+    "github.com/edwindvinas/go-sdk/assistantv2"
     //D0092
     "github.com/edwindvinas/openweathermap"
     //D0093
