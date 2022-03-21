@@ -1,10 +1,6 @@
 #!/bin/bash
-
-rm *.exe~
-rm *.exe
-rm main.go.deployed
-rm my.db
-rm my.db.lock
+# commitGit.sh 202004120946PM
 git add --all
-git commit -m $1 
-git push origin master
+#git commit -m "update"
+git commit -m $1
+git push

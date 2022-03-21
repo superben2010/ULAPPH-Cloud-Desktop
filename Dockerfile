@@ -4,7 +4,7 @@
 FROM golang:1.13 as builder 
 
 # Copy local code to the container image.
-WORKDIR /go/src/acn/ULAPPH-Cloud-Desktop
+WORKDIR /go/src/github.com/edwindvinas/ULAPPH-Cloud-Desktop
 COPY . .
 
 # Fetching dependencies
@@ -20,7 +20,7 @@ RUN apk add --no-cache ca-certificates
 
 # Copy the files from the builder stage to deployable image
 #COPY --from=builder /go/src/acn/ULAPPH-Cloud-Desktop/main /main
-COPY --from=builder /go/src/acn/ULAPPH-Cloud-Desktop/ /
+COPY --from=builder /go/src/github.com/edwindvinas/ULAPPH-Cloud-Desktop/ /
 
 # Remove go source codes
 RUN rm /*.go*
