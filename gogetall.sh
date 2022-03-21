@@ -194,6 +194,8 @@ go get "github.com/edwindvinas/openweathermap"
 
 echo "cloud.google.com/go/cloudtasks/apiv2"
 go get "cloud.google.com/go/cloudtasks/apiv2"
+echo "cloud.google.com/go/cloudtasks"
+go get "cloud.google.com/go/cloudtasks"
 
 echo "go.opencensus.io/trace"
 go get "go.opencensus.io/trace"
