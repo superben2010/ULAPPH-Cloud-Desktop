@@ -25,6 +25,12 @@ go get	"github.com/edwindvinas/html"
 echo	"google.golang.org/api/googleapi/transport"
 go get	"google.golang.org/api/googleapi/transport"
 
+echo 	"github.com/edwindvinas/go-type-adapters"
+go get 	"github.com/edwindvinas/go-type-adapters"
+
+echo    "github.com/edwindvinas/websocket"
+go get    "github.com/edwindvinas/websocket"
+
 #echo	"google.golang.org/api/plus/v1"
 #go get	"google.golang.org/api/plus/v1"
 
@@ -133,11 +139,24 @@ go get "github.com/edwindvinas/perceptive"
 echo "github.com/IBM/go-sdk-core/core"
 go get "github.com/IBM/go-sdk-core/core"
 
+echo "Cloning instead..."
+GOPATH=${GOPATH}
+cd $GOPATH/src/github.com/edwindvinas/ && git clone https://github.com/edwindvinas/go-sdk-core.git
+cd $GOPATH/src/github.com/edwindvinas/go-sdk-core && mv v5/* .
+
 echo "github.com/watson-developer-cloud/go-sdk/assistantv2"
 go get "github.com/watson-developer-cloud/go-sdk/assistantv2"
 
+echo "Cloning instead..."
+GOPATH=${GOPATH}
+cd $GOPATH/src/github.com/edwindvinas/ && git clone https://github.com/edwindvinas/go-sdk.git 
+cd $GOPATH/src/github.com/edwindvinas/go-sdk && mv v2/assistantv2 .
+
 #echo "golang.org/x/net/html"
 #go get "golang.org/x/net/html"
+
+echo "golang.org/x/xerrors"
+go get "golang.org/x/xerrors"
 
 echo "github.com/edwindvinas/openweathermap"
 go get "github.com/edwindvinas/openweathermap"
@@ -231,6 +250,9 @@ go get github.com/tdewolff/minify/v2/svg
 go get github.com/tdewolff/minify/v2/xml
 go get github.com/watson-developer-cloud/go-sdk/assistantv2
 go mod download gopkg.in/yaml.v2
+
+echo "go get gopkg.in/yaml.v2"
+go get "go get gopkg.in/yaml.v2"
 
 
 echo "you may ignore mv errors..."
